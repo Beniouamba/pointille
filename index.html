@@ -44,10 +44,7 @@
             -webkit-user-select: none;
         }
 
-        .app-container {
-            min-height: 100vh;
-            padding: 1rem;
-        }
+        .app-container { min-height: 100vh; padding: 1rem; }
 
         .header {
             text-align: center;
@@ -100,12 +97,7 @@
             transition: all 0.3s ease;
         }
 
-        .lang-button.active {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
-
+        .lang-button.active { background: var(--primary); color: white; border-color: var(--primary); }
         .lang-button:hover:not(.active) { background: #F0F0F0; }
 
         /* Setup Screen */
@@ -147,11 +139,7 @@
             border-radius: 2px;
         }
 
-        .button-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.75rem;
-        }
+        .button-group { display: flex; flex-wrap: wrap; gap: 0.75rem; }
 
         .option-button {
             flex: 1;
@@ -171,12 +159,7 @@
         .option-button:hover { transform: translateY(-2px); box-shadow: 0 4px 12px var(--shadow); }
         .option-button.selected { border-color: var(--primary); background: var(--primary); color: white; transform: scale(1.05); }
 
-        .grid-size-options {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 1rem;
-        }
-
+        .grid-size-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; }
         .player-setup { display: flex; flex-direction: column; gap: 1rem; }
 
         .player-card {
@@ -192,7 +175,6 @@
 
         .player-info { flex: 1; min-width: 150px; }
         .player-name { font-weight: 600; font-size: 1.1rem; color: var(--dark); margin-bottom: 0.5rem; }
-
         .color-picker { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 
         .color-option {
@@ -206,6 +188,30 @@
 
         .color-option:hover { transform: scale(1.1); }
         .color-option.selected { border-color: white; box-shadow: 0 0 0 2px var(--dark); transform: scale(1.15); }
+
+        /* Difficulty cards */
+        .difficulty-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+
+        .diff-card {
+            padding: 1.2rem;
+            border: 2px solid #E0E0E0;
+            background: white;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Outfit', sans-serif;
+            text-align: left;
+        }
+
+        .diff-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px var(--shadow); }
+        .diff-card.selected { border-width: 2px; transform: translateY(-3px); }
+        .diff-card.selected.easy { border-color: #06D6A0; background: #f0fdf8; }
+        .diff-card.selected.medium { border-color: #FF9800; background: #fff8f0; }
+        .diff-card.selected.hard { border-color: #EF476F; background: #fff0f4; }
+
+        .diff-emoji { font-size: 2rem; margin-bottom: 0.4rem; }
+        .diff-name { font-weight: 700; font-size: 1rem; color: var(--dark); margin-bottom: 0.3rem; }
+        .diff-desc { font-size: 0.78rem; color: #666; font-weight: 400; line-height: 1.4; }
 
         .start-button {
             width: 100%;
@@ -314,13 +320,7 @@
             min-width: 280px;
         }
 
-        .scoreboard-title {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: var(--dark);
-            margin-bottom: 1.5rem;
-            text-align: center;
-        }
+        .scoreboard-title { font-size: 1.3rem; font-weight: 700; color: var(--dark); margin-bottom: 1.5rem; text-align: center; }
 
         .score-list { display: flex; flex-direction: column; gap: 1rem; }
 
@@ -365,19 +365,16 @@
 
         .game-board { display: inline-block; position: relative; }
         .board-svg { display: block; max-width: 100%; height: auto; }
-
         .dot-interactive { cursor: pointer; }
-        .dot-interactive:hover circle { filter: brightness(1.3); }
 
         /* Difficulty badges */
         .difficulty-badge {
             display: inline-block;
-            padding: 0.2rem 0.6rem;
-            border-radius: 6px;
-            font-size: 0.75rem;
+            padding: 0.3rem 0.8rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
             font-weight: 700;
             letter-spacing: 0.05em;
-            text-transform: uppercase;
         }
         .difficulty-easy { background: #d4edda; color: #155724; }
         .difficulty-medium { background: #fff3cd; color: #856404; }
@@ -450,6 +447,7 @@
             .setup-screen { padding: 1.5rem; }
             .option-button { min-width: 100px; padding: 0.75rem 1rem; font-size: 0.9rem; }
             .board-container { padding: 1rem; }
+            .difficulty-cards { grid-template-columns: 1fr; }
         }
 
         @media (max-width: 480px) {
@@ -466,7 +464,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useCallback } = React;
 
-        // ─── TRANSLATIONS ────────────────────────────────────────────────────────────
+        // ─── TRANSLATIONS ─────────────────────────────────────────────────────────────
         const T = {
             fr: {
                 title: "SQUARE",
@@ -492,6 +490,7 @@
                 easy: "Facile", mediumDiff: "Moyen", hard: "Difficile",
                 aiThinking: "L'IA réfléchit",
                 turnOf: "Tour de"
+                
             },
             en: {
                 title: "SQUARE",
@@ -520,7 +519,7 @@
             }
         };
 
-        // ─── COLORS ──────────────────────────────────────────────────────────────────
+        // ─── COLORS ───────────────────────────────────────────────────────────────────
         const COLORS = {
             blue:   '#2196F3',
             red:    '#F44336',
@@ -530,7 +529,7 @@
             orange: '#FF9800'
         };
 
-        // ─── SQUARE DETECTION ────────────────────────────────────────────────────────
+        // ─── SQUARE DETECTION ─────────────────────────────────────────────────────────
         function detectSquares(dots, rows, cols, existingSquares) {
             const formed = [];
             for (let r = 0; r < rows; r++) {
@@ -548,7 +547,8 @@
             return formed;
         }
 
-        // ─── AI LOGIC ────────────────────────────────────────────────────────────────
+        // ─── AI ENGINE ────────────────────────────────────────────────────────────────
+
         function getAvailable(dots, rows, cols) {
             const av = [];
             for (let r = 0; r <= rows; r++)
@@ -557,138 +557,262 @@
             return av;
         }
 
-        function scoreMove(dots, row, col, color, rows, cols, existingSquares) {
+        // Count squares formed by placing color at (row,col)
+        function countGain(dots, row, col, color, rows, cols, existingSquares) {
             const testDots = { ...dots, [`${row}-${col}`]: color };
             return detectSquares(testDots, rows, cols, existingSquares).filter(s => s.color === color).length;
+        }
+
+        // For a cell (row,col), count how many "almost complete" squares of `color` exist
+        // with exactly 3 corners of that color placed (placing here would complete it)
+        function countThreatsAt(dots, row, col, color, rows, cols) {
+            // squares that have (row,col) as a corner
+            const offsets = [[0,0],[0,-1],[-1,0],[-1,-1]];
+            let threats = 0;
+            for (const [dr, dc] of offsets) {
+                const sqR = row + dr, sqC = col + dc;
+                if (sqR < 0 || sqC < 0 || sqR >= rows || sqC >= cols) continue;
+                const corners = [
+                    dots[`${sqR}-${sqC}`],
+                    dots[`${sqR}-${sqC+1}`],
+                    dots[`${sqR+1}-${sqC}`],
+                    dots[`${sqR+1}-${sqC+1}`]
+                ];
+                // Count empty + how many are this color
+                const placed = corners.filter(Boolean);
+                const sameColor = placed.filter(c => c === color).length;
+                const empty = 4 - placed.length;
+                // A "threat" = 3 already placed of same color, 1 empty = this cell
+                if (sameColor === 3 && empty === 1) threats++;
+            }
+            return threats;
+        }
+
+        // Count how many "2-corner" partial squares a color has around a given cell
+        // (potential setup squares)
+        function countPotentialAt(dots, row, col, color, rows, cols) {
+            const offsets = [[0,0],[0,-1],[-1,0],[-1,-1]];
+            let potential = 0;
+            for (const [dr, dc] of offsets) {
+                const sqR = row + dr, sqC = col + dc;
+                if (sqR < 0 || sqC < 0 || sqR >= rows || sqC >= cols) continue;
+                const corners = [
+                    dots[`${sqR}-${sqC}`],
+                    dots[`${sqR}-${sqC+1}`],
+                    dots[`${sqR+1}-${sqC}`],
+                    dots[`${sqR+1}-${sqC+1}`]
+                ];
+                const sameColor = corners.filter(c => c === color).length;
+                if (sameColor >= 2) potential += sameColor;
+            }
+            return potential;
+        }
+
+        // Full evaluation score for placing aiColor at (row,col)
+        function evalMove(dots, row, col, aiColor, opponentColors, rows, cols, existingSquares) {
+            const testDots = { ...dots, [`${row}-${col}`]: aiColor };
+
+            // 1. Immediate squares I form
+            const immediateGain = detectSquares(testDots, rows, cols, existingSquares)
+                .filter(s => s.color === aiColor).length;
+
+            // 2. Threats I block: squares opponents would form if THEY placed here
+            let blockedThreats = 0;
+            for (const oc of opponentColors) {
+                blockedThreats += countThreatsAt(dots, row, col, oc, rows, cols);
+            }
+
+            // 3. Threats I leave open: after my move, what can each opponent score next turn?
+            let opponentBestNext = 0;
+            for (const oc of opponentColors) {
+                const oppAvail = getAvailable(testDots, rows, cols);
+                for (const od of oppAvail) {
+                    const g = countGain(testDots, od.row, od.col, oc, rows, cols, existingSquares);
+                    if (g > opponentBestNext) opponentBestNext = g;
+                }
+            }
+
+            // 4. Setup value: how much does placing here build towards future squares?
+            const setup = countPotentialAt(testDots, row, col, aiColor, rows, cols);
+
+            // Weighted score
+            // immediateGain dominates, blocking threats is critical, setting up is nice, leaving openings is bad
+            return immediateGain * 100
+                + blockedThreats * 60
+                - opponentBestNext * 45
+                + setup * 8;
+        }
+
+        // ── HARD: deeper look-ahead using iterative simulation ─────────────────────
+        // After my move, simulate what the best opponent can do, then what I can do after.
+        function evalMoveDeep(dots, row, col, aiColor, opponentColors, rows, cols, existingSquares, depth) {
+            const testDots = { ...dots, [`${row}-${col}`]: aiColor };
+
+            const immediateGain = detectSquares(testDots, rows, cols, existingSquares)
+                .filter(s => s.color === aiColor).length;
+
+            const blocked = opponentColors.reduce((sum, oc) =>
+                sum + countThreatsAt(dots, row, col, oc, rows, cols), 0);
+
+            if (depth === 0) {
+                return immediateGain * 100 + blocked * 60;
+            }
+
+            // Simulate best opponent reply
+            let opponentScore = 0;
+            for (const oc of opponentColors) {
+                const oppAvail = getAvailable(testDots, rows, cols);
+                let bestOppGain = 0;
+                for (const od of oppAvail) {
+                    const g = countGain(testDots, od.row, od.col, oc, rows, cols, existingSquares);
+                    if (g > bestOppGain) bestOppGain = g;
+                }
+                opponentScore += bestOppGain;
+            }
+
+            // Simulate best my reply after opponent
+            const myNextAvail = getAvailable(testDots, rows, cols);
+            let bestMyNext = 0;
+            for (const nd of myNextAvail) {
+                const g = countGain(testDots, nd.row, nd.col, aiColor, rows, cols, existingSquares);
+                if (g > bestMyNext) bestMyNext = g;
+            }
+
+            const setup = countPotentialAt(testDots, row, col, aiColor, rows, cols);
+
+            return immediateGain * 100
+                + blocked * 70
+                - opponentScore * 50
+                + bestMyNext * 20
+                + setup * 8;
         }
 
         function aiPickMove(dots, rows, cols, existingSquares, aiColor, allColors, difficulty) {
             const available = getAvailable(dots, rows, cols);
             if (available.length === 0) return null;
 
-            // ── EASY: pure random ──────────────────────────────────────────────────
+            const opponentColors = allColors.filter(c => c !== aiColor);
+
+            // ── EASY: pure random ─────────────────────────────────────────────────
             if (difficulty === 'easy') {
                 return available[Math.floor(Math.random() * available.length)];
             }
 
-            // Pre-score all moves for AI
-            const scored = available.map(dot => ({
-                ...dot,
-                gain: scoreMove(dots, dot.row, dot.col, aiColor, rows, cols, existingSquares)
-            }));
-
-            // ── MEDIUM ─────────────────────────────────────────────────────────────
+            // ── MEDIUM ────────────────────────────────────────────────────────────
             if (difficulty === 'medium') {
-                // 1. Win immediately if possible
-                const winning = scored.filter(d => d.gain > 0);
-                if (winning.length > 0) {
-                    winning.sort((a, b) => b.gain - a.gain);
-                    return winning[0];
+                // Phase 1: Take any immediate square
+                const immediateWins = available.filter(d =>
+                    countGain(dots, d.row, d.col, aiColor, rows, cols, existingSquares) > 0
+                );
+                if (immediateWins.length > 0) {
+                    immediateWins.sort((a, b) =>
+                        countGain(dots, b.row, b.col, aiColor, rows, cols, existingSquares) -
+                        countGain(dots, a.row, a.col, aiColor, rows, cols, existingSquares)
+                    );
+                    return immediateWins[0];
                 }
-                // 2. Strategic: pick dots that are adjacent to own color (cluster)
-                const strategic = available.filter(({ row, col }) => {
-                    for (const [dr, dc] of [[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[-1,1],[1,-1],[1,1]]) {
-                        if (dots[`${row+dr}-${col+dc}`] === aiColor) return true;
+
+                // Phase 2: Block any opponent that can complete a square right now
+                for (const oc of opponentColors) {
+                    const oppWins = available.filter(d =>
+                        countGain(dots, d.row, d.col, oc, rows, cols, existingSquares) > 0
+                    );
+                    if (oppWins.length > 0) {
+                        // Pick the spot that blocks the most squares
+                        oppWins.sort((a, b) =>
+                            countGain(dots, b.row, b.col, oc, rows, cols, existingSquares) -
+                            countGain(dots, a.row, a.col, oc, rows, cols, existingSquares)
+                        );
+                        return oppWins[0];
                     }
-                    return false;
-                });
-                const pool = strategic.length > 0 ? strategic : available;
+                }
+
+                // Phase 3: Build near own dots (cluster strategy)
+                const scored = available.map(d => ({
+                    ...d,
+                    score: countPotentialAt({ ...dots, [`${d.row}-${d.col}`]: aiColor }, d.row, d.col, aiColor, rows, cols)
+                }));
+                scored.sort((a, b) => b.score - a.score);
+                // Top 30% with slight randomness
+                const pool = scored.slice(0, Math.max(1, Math.ceil(scored.length * 0.3)));
                 return pool[Math.floor(Math.random() * pool.length)];
             }
 
-            // ── HARD: minimax-like look-ahead ──────────────────────────────────────
+            // ── HARD: full multi-factor evaluation with look-ahead ────────────────
             if (difficulty === 'hard') {
-                // 1. Immediate best scoring move
-                const winning = scored.filter(d => d.gain > 0);
-                if (winning.length > 0) {
-                    winning.sort((a, b) => b.gain - a.gain);
-                    return winning[0];
+                // Phase 1: Take any immediate multi-square (greedy if 2+)
+                const immediateWins = available.map(d => ({
+                    ...d,
+                    gain: countGain(dots, d.row, d.col, aiColor, rows, cols, existingSquares)
+                })).filter(d => d.gain > 0);
+
+                if (immediateWins.length > 0) {
+                    immediateWins.sort((a, b) => b.gain - a.gain);
+                    return immediateWins[0];
                 }
 
-                // 2. Block opponents: find moves that would complete a square for any opponent
-                // and try NOT to set them up (avoid placing a 4th corner for them)
-                const opponentColors = allColors.filter(c => c !== aiColor);
-                
-                // Score each available spot by: own_gain - opponent_setup_risk
-                const evaluated = available.map(dot => {
-                    const { row, col } = dot;
-                    const testDots = { ...dots, [`${row}-${col}`]: aiColor };
-
-                    // Own gain already computed
-                    const ownGain = scoreMove(dots, row, col, aiColor, rows, cols, existingSquares);
-
-                    // Opponent risk: after placing HERE, how many squares can each opponent complete next turn?
-                    let opponentNextBest = 0;
-                    for (const oc of opponentColors) {
-                        const oppAvail = getAvailable(testDots, rows, cols);
-                        for (const od of oppAvail) {
-                            const g = scoreMove(testDots, od.row, od.col, oc, rows, cols, existingSquares);
-                            if (g > opponentNextBest) opponentNextBest = g;
-                        }
+                // Phase 2: Block critical opponent threats (3-corner danger)
+                // Find cells where opponent has 3 corners → must block
+                const criticalBlocks = [];
+                for (const oc of opponentColors) {
+                    for (const d of available) {
+                        const threats = countThreatsAt(dots, d.row, d.col, oc, rows, cols);
+                        if (threats > 0) criticalBlocks.push({ ...d, threats, oc });
                     }
-
-                    // Potential: corners of incomplete squares
-                    let potential = 0;
-                    for (const [dr0, dc0] of [[0,0],[0,-1],[-1,0],[-1,-1]]) {
-                        const sqR = row + dr0, sqC = col + dc0;
-                        if (sqR < 0 || sqC < 0 || sqR >= rows || sqC >= cols) continue;
-                        const corners = [
-                            dots[`${sqR}-${sqC}`],
-                            dots[`${sqR}-${sqC+1}`],
-                            dots[`${sqR+1}-${sqC}`],
-                            dots[`${sqR+1}-${sqC+1}`]
-                        ].filter(Boolean);
-                        const sameColor = corners.filter(c => c === aiColor).length;
-                        if (sameColor >= 1) potential += sameColor;
-                    }
-
-                    return { ...dot, ownGain, opponentNextBest, potential, score: ownGain * 10 - opponentNextBest * 6 + potential * 2 };
-                });
-
-                // Block moves that let opponent score next turn
-                const blocking = evaluated.filter(d => d.opponentNextBest > 0);
-                if (blocking.length > 0) {
-                    // Among blocking moves, pick the one with best own score
-                    blocking.sort((a, b) => b.score - a.score);
-                    return blocking[0];
+                }
+                if (criticalBlocks.length > 0) {
+                    criticalBlocks.sort((a, b) => b.threats - a.threats);
+                    // Among blocking moves, pick one that also helps me
+                    const best = criticalBlocks[0];
+                    // Check if there's a move that both blocks AND sets me up
+                    const combo = criticalBlocks.filter(d => d.threats >= best.threats)
+                        .map(d => ({
+                            ...d,
+                            mySetup: countPotentialAt({ ...dots, [`${d.row}-${d.col}`]: aiColor }, d.row, d.col, aiColor, rows, cols)
+                        }));
+                    combo.sort((a, b) => b.mySetup - a.mySetup);
+                    return combo[0];
                 }
 
-                // Otherwise pick the best strategic move
+                // Phase 3: Full strategic evaluation with deep look-ahead
+                const evaluated = available.map(d => ({
+                    ...d,
+                    score: evalMoveDeep(dots, d.row, d.col, aiColor, opponentColors, rows, cols, existingSquares, 1)
+                }));
                 evaluated.sort((a, b) => b.score - a.score);
-                // Add a tiny randomness to avoid determinism
-                const topN = evaluated.slice(0, Math.max(1, Math.ceil(evaluated.length * 0.15)));
+
+                // Top 10% pool (keeps some unpredictability at equal scores)
+                const topN = evaluated.slice(0, Math.max(1, Math.ceil(evaluated.length * 0.1)));
                 return topN[Math.floor(Math.random() * topN.length)];
             }
 
             return available[Math.floor(Math.random() * available.length)];
         }
 
-        // ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
+        // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
         const SquareGame = () => {
             const [lang, setLang] = useState('fr');
             const t = T[lang];
 
-            const [gameState, setGameState]     = useState('setup');  // setup | playing | finished
-            const [numPlayers, setNumPlayers]   = useState(2);
-            const [vsAI, setVsAI]               = useState(false);
-            const [aiDiff, setAiDiff]           = useState('medium');
-            const [gridSize, setGridSize]       = useState({ rows: 8, cols: 8 });
-            const [players, setPlayers]         = useState([
+            const [gameState, setGameState]   = useState('setup');
+            const [numPlayers, setNumPlayers] = useState(2);
+            const [vsAI, setVsAI]             = useState(false);
+            const [aiDiff, setAiDiff]         = useState('medium');
+            const [gridSize, setGridSize]     = useState({ rows: 8, cols: 8 });
+            const [players, setPlayers]       = useState([
                 { id: 1, name: `${T.fr.player} 1`, color: 'blue',  isAI: false, score: 0 },
                 { id: 2, name: `${T.fr.player} 2`, color: 'red',   isAI: false, score: 0 }
             ]);
-            const [curIdx, setCurIdx]           = useState(0);
-            const [dots, setDots]               = useState({});
-            const [squares, setSquares]         = useState([]);
-            const [aiThinking, setAiThinking]   = useState(false);
+            const [curIdx, setCurIdx]         = useState(0);
+            const [dots, setDots]             = useState({});
+            const [squares, setSquares]       = useState([]);
+            const [aiThinking, setAiThinking] = useState(false);
 
-            // Keep a ref to latest game state for the AI timeout callback
             const stateRef = useRef({ dots, squares, players, curIdx, gameState, gridSize });
             useEffect(() => {
                 stateRef.current = { dots, squares, players, curIdx, gameState, gridSize };
             });
 
-            // Rebuild players when setup options change
             useEffect(() => {
                 if (gameState !== 'setup') return;
                 const keys = Object.keys(COLORS);
@@ -705,7 +829,7 @@
                 setPlayers(next);
             }, [numPlayers, vsAI, lang, gameState]);
 
-            // ── Core turn logic ────────────────────────────────────────────────────
+            // ── Core turn logic ───────────────────────────────────────────────────
             const applyMove = useCallback((row, col, _dots, _squares, _players, _curIdx, _gridSize) => {
                 if (gameState !== 'playing') return;
                 if (_dots[`${row}-${col}`]) return;
@@ -742,10 +866,9 @@
                     return;
                 }
 
-                // Trigger AI if next player is AI
                 if (_players[nextIdx].isAI) {
                     setAiThinking(true);
-                    const delay = aiDiff === 'hard' ? 900 : aiDiff === 'medium' ? 650 : 450;
+                    const delay = aiDiff === 'hard' ? 1100 : aiDiff === 'medium' ? 700 : 450;
                     setTimeout(() => {
                         const s = stateRef.current;
                         if (s.gameState !== 'playing') { setAiThinking(false); return; }
@@ -778,7 +901,6 @@
                 setAiThinking(false);
                 setGameState('playing');
 
-                // If player 1 is AI (solo AI mode – shouldn't happen but guard)
                 if (reset[0].isAI) {
                     setAiThinking(true);
                     const allColors = reset.map(p => p.color);
@@ -790,15 +912,14 @@
                 }
             };
 
-            const newGame = () => { setGameState('setup'); setDots({}); setSquares([]); setCurIdx(0); setAiThinking(false); };
-            const forfeit = () => { setGameState('finished'); setAiThinking(false); };
-
+            const newGame  = () => { setGameState('setup'); setDots({}); setSquares([]); setCurIdx(0); setAiThinking(false); };
+            const forfeit  = () => { setGameState('finished'); setAiThinking(false); };
             const updateColor = (id, color) => {
                 if (players.some(p => p.id !== id && p.color === color)) return;
                 setPlayers(players.map(p => p.id === id ? { ...p, color } : p));
             };
 
-            // ── RENDER: Setup ──────────────────────────────────────────────────────
+            // ── RENDER: Setup ─────────────────────────────────────────────────────
             const renderSetup = () => (
                 <div className="setup-screen">
                     <h2 className="setup-title">{t.setupTitle}</h2>
@@ -830,16 +951,19 @@
                     {vsAI && (
                         <div className="setup-section">
                             <div className="section-label">{t.aiDifficulty}</div>
-                            <div className="button-group">
+                            <div className="difficulty-cards">
                                 {[
-                                    { key: 'easy',   label: t.easy,       emoji: '😊', badge: 'difficulty-easy' },
-                                    { key: 'medium', label: t.mediumDiff, emoji: '🧠', badge: 'difficulty-medium' },
-                                    { key: 'hard',   label: t.hard,       emoji: '🔥', badge: 'difficulty-hard' }
-                                ].map(({ key, label, emoji, badge }) => (
-                                    <button key={key} className={`option-button ${aiDiff === key ? 'selected' : ''}`}
+                                    { key: 'easy',   label: t.easy,       desc: t.easyDesc,   emoji: '😊', cls: 'easy' },
+                                    { key: 'medium', label: t.mediumDiff, desc: t.mediumDesc, emoji: '🧠', cls: 'medium' },
+                                    { key: 'hard',   label: t.hard,       desc: t.hardDesc,   emoji: '🔥', cls: 'hard' }
+                                ].map(({ key, label, desc, emoji, cls }) => (
+                                    <div key={key}
+                                        className={`diff-card ${cls} ${aiDiff === key ? 'selected' : ''}`}
                                         onClick={() => setAiDiff(key)}>
-                                        {emoji} {label}
-                                    </button>
+                                        <div className="diff-emoji">{emoji}</div>
+                                        <div className="diff-name">{label}</div>
+                                        <div className="diff-desc">{desc}</div>
+                                    </div>
                                 ))}
                             </div>
                         </div>
@@ -894,7 +1018,7 @@
                 </div>
             );
 
-            // ── RENDER: Board ──────────────────────────────────────────────────────
+            // ── RENDER: Board ─────────────────────────────────────────────────────
             const renderBoard = () => {
                 const cellSize = Math.min(52, Math.max(28, Math.floor((Math.min(window.innerWidth, 800) - 80) / (gridSize.cols + 1))));
                 const dotR = Math.max(5, Math.floor(cellSize * 0.16));
@@ -904,7 +1028,6 @@
                 return (
                     <svg className="board-svg" width={w} height={h} viewBox={`0 0 ${w} ${h}`}
                         style={{ touchAction: 'none' }}>
-                        {/* Grid */}
                         {Array.from({ length: gridSize.rows }, (_, r) =>
                             Array.from({ length: gridSize.cols }, (_, c) => (
                                 <rect key={`g${r}-${c}`}
@@ -915,7 +1038,6 @@
                             ))
                         )}
 
-                        {/* Squares */}
                         {squares.map((sq, i) => (
                             <g key={`sq${i}`} style={{ animation: 'squareAppear 0.4s ease-out' }}>
                                 <rect
@@ -941,7 +1063,6 @@
                             </g>
                         ))}
 
-                        {/* Dots */}
                         {Array.from({ length: gridSize.rows + 1 }, (_, r) =>
                             Array.from({ length: gridSize.cols + 1 }, (_, c) => {
                                 const key = `${r}-${c}`;
@@ -971,7 +1092,7 @@
                 );
             };
 
-            // ── RENDER: Game ───────────────────────────────────────────────────────
+            // ── RENDER: Game ──────────────────────────────────────────────────────
             const renderGame = () => {
                 const cur = players[curIdx];
                 return (
@@ -1030,10 +1151,10 @@
                 );
             };
 
-            // ── RENDER: Winner ─────────────────────────────────────────────────────
+            // ── RENDER: Winner ────────────────────────────────────────────────────
             const renderWinner = () => {
                 const sorted = [...players].sort((a, b) => b.score - a.score);
-                const best = sorted[0];
+                const best   = sorted[0];
                 const isDraw = sorted.filter(p => p.score === best.score).length > 1;
                 return (
                     <div className="winner-screen">
@@ -1061,7 +1182,6 @@
                 );
             };
 
-            // ── Main render ────────────────────────────────────────────────────────
             return (
                 <div className="app-container">
                     <div className="language-toggle">
@@ -1082,14 +1202,11 @@
         ReactDOM.render(<SquareGame />, document.getElementById('root'));
     </script>
 
-    <!-- Block all zoom gestures -->
     <script>
-        // Block pinch-zoom
         document.addEventListener('touchstart', function(e) {
             if (e.touches.length > 1) e.preventDefault();
         }, { passive: false });
 
-        // Block double-tap zoom
         let lastTap = 0;
         document.addEventListener('touchend', function(e) {
             const now = Date.now();
@@ -1097,12 +1214,10 @@
             lastTap = now;
         }, { passive: false });
 
-        // Block wheel zoom (Ctrl+scroll)
         document.addEventListener('wheel', function(e) {
             if (e.ctrlKey) e.preventDefault();
         }, { passive: false });
 
-        // Block keyboard zoom shortcuts
         document.addEventListener('keydown', function(e) {
             if ((e.ctrlKey || e.metaKey) && (e.key === '+' || e.key === '-' || e.key === '=')) {
                 e.preventDefault();
