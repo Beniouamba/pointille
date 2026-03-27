@@ -3,1245 +3,1190 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>Square - Jeu de Points Colorés</title>
+    <title>SQUARE — Multijoueur en ligne</title>
+
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&family=DM+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
     <style>
         :root {
-            --primary: #FF6B35;
-            --secondary: #004E89;
-            --accent: #FFD23F;
-            --success: #06D6A0;
-            --danger: #EF476F;
-            --dark: #1A1A2E;
-            --light: #F8F9FA;
-            --grid-bg: #FFFFFF;
-            --shadow: rgba(0, 0, 0, 0.1);
+            --c1: #FF6B35; --c2: #004E89; --c3: #FFD23F; --c4: #06D6A0; --c5: #EF476F;
+            --dark: #0D0D1A; --mid: #1A1A30; --card: #22223A; --border: rgba(255,255,255,0.08);
+            --text: #F0F0FF; --muted: rgba(240,240,255,0.45); --radius: 16px; --shadow: 0 8px 32px rgba(0,0,0,0.45);
         }
+        * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+        html, body { height:100%; overscroll-behavior:none; }
+        body { font-family:'Outfit',sans-serif; background:var(--dark); color:var(--text); min-height:100vh; overflow-x:hidden; user-select:none; -webkit-user-select:none; }
+        body::before { content:''; position:fixed; inset:0; z-index:0; background-image:linear-gradient(rgba(255,107,53,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,107,53,0.04) 1px,transparent 1px); background-size:48px 48px; pointer-events:none; }
+        body::after { content:''; position:fixed; inset:0; z-index:0; background:radial-gradient(ellipse 80% 60% at 50% -10%,rgba(255,107,53,0.12),transparent); pointer-events:none; }
+        .app { position:relative; z-index:1; min-height:100vh; }
+        .header { text-align:center; padding:2.5rem 1rem 1.5rem; border-bottom:1px solid var(--border); }
+        .logo { font-size:clamp(2.8rem,8vw,5.5rem); font-weight:900; letter-spacing:-0.03em; background:linear-gradient(135deg,var(--c3) 0%,var(--c1) 60%,var(--c5) 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; line-height:1; }
+        .logo-sub { color:var(--muted); font-size:clamp(0.8rem,2vw,1rem); margin-top:0.4rem; letter-spacing:0.12em; text-transform:uppercase; font-weight:400; }
+        .lang-bar { position:fixed; top:1rem; right:1rem; z-index:200; display:flex; gap:4px; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:4px; }
+        .lang-btn { padding:0.35rem 0.75rem; border:none; background:transparent; border-radius:8px; cursor:pointer; font-family:'Outfit',sans-serif; font-weight:600; font-size:0.85rem; color:var(--muted); transition:all 0.2s; }
+        .lang-btn.active { background:var(--c1); color:white; }
+        .top-tabs { display:flex; gap:4px; justify-content:center; margin:1.5rem auto 0; background:rgba(255,255,255,0.05); border-radius:12px; padding:4px; max-width:420px; border:1px solid var(--border); }
+        .top-tab { flex:1; padding:0.65rem 1rem; border:none; background:transparent; border-radius:9px; cursor:pointer; font-family:'Outfit',sans-serif; font-weight:600; font-size:0.95rem; color:var(--muted); transition:all 0.25s; }
+        .top-tab.active { background:var(--c1); color:white; box-shadow:0 2px 12px rgba(255,107,53,0.4); }
+        .main { max-width:1400px; margin:0 auto; padding:2rem 1.5rem; }
+        .card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:2rem; box-shadow:var(--shadow); animation:fadeUp 0.5s ease-out backwards; }
+        @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+        .card-title { font-size:1.4rem; font-weight:700; margin-bottom:1.5rem; display:flex; align-items:center; gap:0.6rem; }
+        .card-title .tag { font-size:0.75rem; background:var(--c1); color:white; padding:0.2rem 0.6rem; border-radius:6px; font-weight:700; }
+        .setup-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; max-width:900px; margin:0 auto; }
+        @media(max-width:700px){ .setup-grid{ grid-template-columns:1fr; } }
+        .section-label { font-size:0.85rem; font-weight:700; color:var(--muted); letter-spacing:0.1em; text-transform:uppercase; margin-bottom:0.8rem; }
+        .btn-group { display:flex; flex-wrap:wrap; gap:0.5rem; }
+        .opt-btn { flex:1; min-width:90px; padding:0.7rem 1rem; border:1px solid var(--border); background:rgba(255,255,255,0.04); border-radius:10px; cursor:pointer; font-family:'Outfit',sans-serif; font-size:0.9rem; font-weight:600; color:var(--text); transition:all 0.2s; }
+        .opt-btn:hover { background:rgba(255,255,255,0.09); }
+        .opt-btn.selected { border-color:var(--c1); background:rgba(255,107,53,0.2); color:var(--c1); }
+        .diff-row { display:grid; grid-template-columns:repeat(3,1fr); gap:0.75rem; }
+        @media(max-width:500px){ .diff-row{ grid-template-columns:1fr; } }
+        .diff-card { padding:1rem; border:1px solid var(--border); background:rgba(255,255,255,0.03); border-radius:12px; cursor:pointer; transition:all 0.2s; }
+        .diff-card:hover { background:rgba(255,255,255,0.07); }
+        .diff-card.selected.easy { border-color:#06D6A0; background:rgba(6,214,160,0.1); }
+        .diff-card.selected.medium { border-color:#FFB800; background:rgba(255,184,0,0.1); }
+        .diff-card.selected.hard { border-color:#EF476F; background:rgba(239,71,111,0.1); }
+        .diff-card .emoji { font-size:1.6rem; margin-bottom:0.3rem; }
+        .diff-card .name { font-weight:700; font-size:0.9rem; }
+        .diff-card .desc { font-size:0.75rem; color:var(--muted); margin-top:0.3rem; line-height:1.4; }
+        .color-picker { display:flex; gap:0.5rem; flex-wrap:wrap; }
+        .color-dot { width:36px; height:36px; border-radius:50%; border:3px solid transparent; cursor:pointer; transition:all 0.2s; }
+        .color-dot:hover { transform:scale(1.1); }
+        .color-dot.selected { border-color:white; box-shadow:0 0 0 2px rgba(255,255,255,0.5); transform:scale(1.15); }
+        .color-dot.taken { opacity:0.2; cursor:not-allowed; }
+        .player-row { display:flex; align-items:center; gap:1rem; padding:0.9rem 1rem; background:rgba(255,255,255,0.04); border-radius:12px; margin-bottom:0.6rem; border:1px solid var(--border); }
+        .player-dot { width:28px; height:28px; border-radius:50%; flex-shrink:0; border:2px solid rgba(255,255,255,0.3); }
+        .player-row-info { flex:1; }
+        .player-row-name { font-weight:600; font-size:0.95rem; }
+        .primary-btn { width:100%; padding:1.2rem; background:linear-gradient(135deg,var(--c1),#FF8C61); color:white; border:none; border-radius:12px; font-family:'Outfit',sans-serif; font-size:1.1rem; font-weight:700; cursor:pointer; transition:all 0.3s; box-shadow:0 6px 20px rgba(255,107,53,0.35); margin-top:1rem; }
+        .primary-btn:hover { transform:translateY(-2px); box-shadow:0 10px 28px rgba(255,107,53,0.5); }
+        .primary-btn:disabled { opacity:0.4; cursor:not-allowed; transform:none; }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
-        html, body { touch-action: pan-x pan-y; overscroll-behavior: none; }
-
-        body {
-            font-family: 'Outfit', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            overflow-x: hidden;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-
-        .app-container { min-height: 100vh; padding: 1rem; }
-
-        .header { text-align: center; padding: 2rem 1rem; animation: fadeInDown 0.8s ease-out; }
-        .logo {
-            font-size: clamp(2.5rem, 8vw, 5rem);
-            font-weight: 900;
-            background: linear-gradient(135deg, var(--accent) 0%, var(--primary) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            letter-spacing: -0.02em;
-            margin-bottom: 0.5rem;
-        }
-        .tagline { color: var(--light); font-size: clamp(0.9rem, 2vw, 1.2rem); font-weight: 300; opacity: 0.9; }
-
-        .language-toggle {
-            position: fixed; top: 1rem; right: 1rem; z-index: 100;
-            background: rgba(255,255,255,0.95); padding: 0.5rem 1rem; border-radius: 12px;
-            box-shadow: 0 4px 12px var(--shadow); display: flex; gap: 0.5rem; align-items: center;
-        }
-        .lang-button {
-            padding: 0.5rem 1rem; border: 2px solid transparent; background: transparent; border-radius: 8px;
-            cursor: pointer; font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 0.9rem; color: var(--dark);
-            transition: all 0.3s ease;
-        }
-        .lang-button.active { background: var(--primary); color: white; border-color: var(--primary); }
-        .lang-button:hover:not(.active) { background: #F0F0F0; }
-
-        /* ── TOP NAV TABS ── */
-        .top-tabs {
-            display: flex; gap: 0; justify-content: center; margin-bottom: 1.5rem;
-            background: rgba(255,255,255,0.15); border-radius: 14px; padding: 4px; max-width: 400px; margin: 0 auto 1.5rem;
-        }
-        .top-tab {
-            flex: 1; padding: 0.7rem 1.2rem; border: none; background: transparent; border-radius: 10px;
-            cursor: pointer; font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 0.95rem;
-            color: rgba(255,255,255,0.7); transition: all 0.3s ease;
-        }
-        .top-tab.active { background: white; color: var(--dark); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
-
-        /* ── SETUP ── */
-        .setup-screen {
-            max-width: 900px; margin: 0 auto;
-            background: rgba(255,255,255,0.98); border-radius: 24px;
-            padding: clamp(1.5rem, 4vw, 3rem);
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            animation: fadeInUp 0.8s ease-out 0.2s backwards;
-        }
-        .setup-title { font-size: clamp(1.5rem, 4vw, 2rem); font-weight: 700; color: var(--dark); margin-bottom: 2rem; text-align: center; }
-        .setup-section { margin-bottom: 2rem; }
-        .section-label { font-size: 1.1rem; font-weight: 600; color: var(--secondary); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
-        .section-label::before { content: ''; width: 4px; height: 20px; background: var(--primary); border-radius: 2px; }
-
-        .button-group { display: flex; flex-wrap: wrap; gap: 0.75rem; }
-        .option-button {
-            flex: 1; min-width: 120px; padding: 1rem 1.5rem; border: 2px solid #E0E0E0;
-            background: white; border-radius: 12px; cursor: pointer; transition: all 0.3s ease;
-            font-family: 'Outfit', sans-serif; font-size: 1rem; font-weight: 600; color: var(--dark);
-        }
-        .option-button:hover { transform: translateY(-2px); box-shadow: 0 4px 12px var(--shadow); }
-        .option-button.selected { border-color: var(--primary); background: var(--primary); color: white; transform: scale(1.05); }
-
-        .grid-size-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; }
-        .player-setup { display: flex; flex-direction: column; gap: 1rem; }
-        .player-card {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            padding: 1.5rem; border-radius: 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 1rem;
-            box-shadow: 0 4px 12px var(--shadow);
-        }
-        .player-info { flex: 1; min-width: 150px; }
-        .player-name { font-weight: 600; font-size: 1.1rem; color: var(--dark); margin-bottom: 0.5rem; }
-        .color-picker { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-        .color-option { width: 40px; height: 40px; border-radius: 50%; border: 3px solid transparent; cursor: pointer; transition: all 0.3s ease; }
-        .color-option:hover { transform: scale(1.1); }
-        .color-option.selected { border-color: white; box-shadow: 0 0 0 2px var(--dark); transform: scale(1.15); }
-
-        .difficulty-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
-        .diff-card {
-            padding: 1.2rem; border: 2px solid #E0E0E0; background: white;
-            border-radius: 16px; cursor: pointer; transition: all 0.3s ease;
-            font-family: 'Outfit', sans-serif; text-align: left;
-        }
-        .diff-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px var(--shadow); }
-        .diff-card.selected { transform: translateY(-3px); }
-        .diff-card.selected.easy   { border-color: #06D6A0; background: #f0fdf8; }
-        .diff-card.selected.medium { border-color: #FF9800; background: #fff8f0; }
-        .diff-card.selected.hard   { border-color: #EF476F; background: #fff0f4; }
-        .diff-emoji { font-size: 2rem; margin-bottom: 0.4rem; }
-        .diff-name { font-weight: 700; font-size: 1rem; color: var(--dark); margin-bottom: 0.3rem; }
-        .diff-desc { font-size: 0.78rem; color: #666; font-weight: 400; line-height: 1.4; }
-
-        .start-button {
-            width: 100%; padding: 1.5rem;
-            background: linear-gradient(135deg, var(--primary) 0%, #FF8C61 100%);
-            color: white; border: none; border-radius: 16px; font-size: 1.3rem; font-weight: 700;
-            cursor: pointer; transition: all 0.3s ease; margin-top: 1rem;
-            box-shadow: 0 8px 24px rgba(255,107,53,0.4); font-family: 'Outfit', sans-serif;
-        }
-        .start-button:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(255,107,53,0.5); }
+        /* ── ONLINE ── */
+        .online-section { max-width:900px; margin:0 auto; }
+        .lobby-actions { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1.5rem; }
+        @media(max-width:600px){ .lobby-actions{ grid-template-columns:1fr; } }
+        .action-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:1.8rem; cursor:pointer; transition:all 0.25s; text-align:center; }
+        .action-card:hover { border-color:var(--c1); background:rgba(255,107,53,0.07); transform:translateY(-3px); box-shadow:0 8px 24px rgba(255,107,53,0.2); }
+        .action-card .ac-icon { font-size:2.5rem; margin-bottom:0.8rem; }
+        .action-card .ac-title { font-size:1.1rem; font-weight:700; margin-bottom:0.4rem; }
+        .action-card .ac-desc { font-size:0.83rem; color:var(--muted); line-height:1.5; }
+        .join-row { display:flex; gap:0.75rem; margin-top:1rem; }
+        .join-input { flex:1; padding:0.9rem 1.2rem; background:rgba(255,255,255,0.07); border:1px solid var(--border); border-radius:10px; color:var(--text); font-family:'DM Mono',monospace; font-size:1.2rem; letter-spacing:0.2em; text-align:center; outline:none; text-transform:uppercase; transition:border-color 0.2s; }
+        .join-input:focus { border-color:var(--c3); }
+        .join-input::placeholder { font-size:0.85rem; letter-spacing:0.05em; color:var(--muted); }
+        .room-header { display:flex; align-items:center; gap:1rem; flex-wrap:wrap; margin-bottom:1.5rem; padding-bottom:1.2rem; border-bottom:1px solid var(--border); }
+        .room-code-badge { background:rgba(255,210,63,0.15); border:1px solid rgba(255,210,63,0.4); border-radius:10px; padding:0.5rem 1.2rem; font-family:'DM Mono',monospace; font-size:1.5rem; font-weight:700; color:var(--c3); letter-spacing:0.2em; }
+        .room-status-badge { padding:0.4rem 0.9rem; border-radius:8px; font-size:0.8rem; font-weight:700; letter-spacing:0.06em; }
+        .status-waiting { background:rgba(6,214,160,0.15); color:#06D6A0; border:1px solid rgba(6,214,160,0.3); }
+        .status-playing { background:rgba(255,107,53,0.15); color:var(--c1); border:1px solid rgba(255,107,53,0.3); }
+        .room-players { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:0.75rem; margin-bottom:1.5rem; }
+        .room-player-card { background:rgba(255,255,255,0.04); border:1px solid var(--border); border-radius:12px; padding:1rem 1.2rem; display:flex; align-items:center; gap:0.8rem; transition:all 0.3s; }
+        .room-player-card.me { border-color:var(--c3); background:rgba(255,210,63,0.07); }
+        .room-player-card.host-card { border-color:var(--c1); }
+        .room-player-avatar { width:40px; height:40px; border-radius:50%; flex-shrink:0; border:2px solid rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:1.1rem; }
+        .room-player-name { font-weight:700; font-size:0.95rem; }
+        .room-player-badge { font-size:0.7rem; color:var(--muted); margin-top:2px; }
+        .empty-slot { opacity:0.35; border-style:dashed; }
+        .chat-box { background:rgba(0,0,0,0.25); border:1px solid var(--border); border-radius:12px; overflow:hidden; height:200px; display:flex; flex-direction:column; }
+        .chat-messages { flex:1; overflow-y:auto; padding:0.8rem 1rem; display:flex; flex-direction:column; gap:0.3rem; }
+        .chat-messages::-webkit-scrollbar { width:4px; }
+        .chat-messages::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.15); border-radius:2px; }
+        .chat-msg { font-size:0.83rem; line-height:1.4; color:var(--muted); }
+        .chat-msg .sender { font-weight:700; }
+        .chat-msg.system { color:rgba(255,210,63,0.7); font-style:italic; }
+        .chat-input-row { display:flex; border-top:1px solid var(--border); }
+        .chat-input { flex:1; padding:0.65rem 1rem; background:transparent; border:none; color:var(--text); font-family:'Outfit',sans-serif; font-size:0.85rem; outline:none; }
+        .chat-input::placeholder { color:var(--muted); }
+        .chat-send { padding:0.65rem 1rem; background:transparent; border:none; border-left:1px solid var(--border); color:var(--c1); cursor:pointer; font-size:1.1rem; transition:background 0.2s; }
+        .chat-send:hover { background:rgba(255,107,53,0.15); }
 
         /* ── GAME ── */
-        .game-screen { max-width: 1600px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }
-        .game-header {
-            display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between; align-items: center;
-            background: rgba(255,255,255,0.95); padding: 1rem 1.5rem; border-radius: 16px;
-            box-shadow: 0 4px 20px var(--shadow);
-        }
-        .current-player { font-size: 1.2rem; font-weight: 600; display: flex; align-items: center; gap: 0.75rem; color: var(--dark); }
-        .player-indicator { width: 24px; height: 24px; border-radius: 50%; border: 3px solid var(--dark); animation: pulse 2s infinite; }
-        .ai-thinking { display: flex; align-items: center; gap: 0.5rem; color: #666; font-size: 0.95rem; font-style: italic; }
-        .thinking-dots span { display: inline-block; animation: thinkingDot 1.4s infinite; font-size: 1.2rem; }
-        .thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
-        .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes thinkingDot { 0%,80%,100%{opacity:0.3;transform:scale(0.8)}40%{opacity:1;transform:scale(1.2)} }
-        .game-controls { display: flex; gap: 0.75rem; flex-wrap: wrap; }
-        .control-button {
-            padding: 0.75rem 1.5rem; border: none; border-radius: 10px;
-            font-family: 'Outfit', sans-serif; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 0.95rem;
-        }
-        .control-button.new-game { background: var(--success); color: white; }
-        .control-button.forfeit  { background: var(--danger); color: white; }
-        .control-button:hover { transform: translateY(-2px); box-shadow: 0 4px 12px var(--shadow); }
-
-        .game-content { display: grid; grid-template-columns: 1fr auto; gap: 1.5rem; align-items: start; }
-        @media(max-width:1024px){ .game-content{ grid-template-columns:1fr; } }
-
-        .scoreboard {
-            background: rgba(255,255,255,0.95); padding: 1.5rem; border-radius: 16px;
-            box-shadow: 0 4px 20px var(--shadow); min-width: 280px;
-        }
-        .scoreboard-title { font-size: 1.3rem; font-weight: 700; color: var(--dark); margin-bottom: 1.5rem; text-align: center; }
-        .score-list { display: flex; flex-direction: column; gap: 1rem; }
-        .score-item {
-            display: flex; justify-content: space-between; align-items: center; padding: 1rem;
-            background: linear-gradient(135deg, #f5f7fa 0%, #e8eef3 100%); border-radius: 12px; transition: all 0.3s ease;
-        }
-        .score-item.active {
-            background: linear-gradient(135deg, var(--accent) 0%, #FFE066 100%);
-            transform: scale(1.05); box-shadow: 0 4px 16px rgba(255,210,63,0.4);
-        }
-        .score-player { display: flex; align-items: center; gap: 0.75rem; }
-        .score-color { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--dark); }
-        .score-name { font-weight: 600; font-size: 1.05rem; }
-        .score-value { font-size: 1.5rem; font-weight: 700; font-family: 'DM Mono', monospace; color: var(--primary); }
-
-        .board-container {
-            background: var(--grid-bg); padding: clamp(1rem, 3vw, 2rem); border-radius: 16px;
-            box-shadow: 0 8px 32px var(--shadow); overflow: auto; display: flex; justify-content: center; align-items: center;
-        }
-        .game-board { display: inline-block; position: relative; }
-        .board-svg { display: block; max-width: 100%; height: auto; }
-        .dot-interactive { cursor: pointer; }
-
-        .difficulty-badge {
-            display: inline-block; padding: 0.3rem 0.8rem; border-radius: 8px;
-            font-size: 0.8rem; font-weight: 700; letter-spacing: 0.05em;
-        }
-        .difficulty-easy   { background: #d4edda; color: #155724; }
-        .difficulty-medium { background: #fff3cd; color: #856404; }
-        .difficulty-hard   { background: #f8d7da; color: #721c24; }
-
-        /* ── WINNER ── */
-        .winner-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); display: flex; justify-content: center; align-items: center;
-            z-index: 1000; animation: fadeIn 0.5s ease-out;
-        }
-        .winner-content {
-            background: white; padding: 3rem; border-radius: 24px; text-align: center;
-            max-width: 500px; width: 90%; animation: scaleIn 0.5s ease-out;
-        }
-        .winner-title {
-            font-size: clamp(2rem,5vw,3rem); font-weight: 900;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 1rem;
-        }
-        .winner-name { font-size: 1.8rem; font-weight: 700; color: var(--dark); margin-bottom: 2rem; }
-        .final-scores { margin-bottom: 2rem; }
-        .final-score-item { display: flex; justify-content: space-between; padding: 0.75rem; margin-bottom: 0.5rem; background: #F5F5F5; border-radius: 8px; }
-
-        /* ── MANUAL ── */
-        .manual-screen {
-            max-width: 860px; margin: 0 auto;
-            background: rgba(255,255,255,0.98); border-radius: 24px;
-            padding: clamp(1.5rem, 4vw, 3rem);
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            animation: fadeInUp 0.6s ease-out;
-        }
-        .manual-title {
-            font-size: clamp(1.6rem, 4vw, 2.2rem); font-weight: 900; color: var(--dark);
-            margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.6rem;
-        }
-        .manual-subtitle { color: #888; font-size: 1rem; margin-bottom: 2rem; font-weight: 400; }
-
-        .manual-section { margin-bottom: 2rem; }
-        .manual-section-title {
-            font-size: 1.15rem; font-weight: 700; color: var(--secondary);
-            margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; padding-bottom: 0.5rem;
-            border-bottom: 2px solid #EEE;
-        }
-        .manual-section-title .icon { font-size: 1.3rem; }
-
-        .manual-p { color: #444; line-height: 1.7; margin-bottom: 0.8rem; font-size: 0.97rem; }
-        .manual-ol { padding-left: 1.4rem; color: #444; line-height: 1.8; font-size: 0.97rem; }
-        .manual-ol li { margin-bottom: 0.4rem; }
-
-        .tip-card {
-            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-            border-left: 4px solid var(--secondary);
-            border-radius: 10px; padding: 1rem 1.2rem; margin-bottom: 0.8rem;
-        }
-        .tip-card strong { color: var(--secondary); }
-        .tip-card p { color: #444; font-size: 0.93rem; line-height: 1.6; margin-top: 0.25rem; }
-
-        .diff-row {
-            display: flex; gap: 1rem; margin-bottom: 0.8rem; flex-wrap: wrap;
-        }
-        .diff-pill {
-            flex: 1; min-width: 160px; border-radius: 12px; padding: 1rem 1.2rem;
-        }
-        .diff-pill.easy   { background: #d4edda; }
-        .diff-pill.medium { background: #fff3cd; }
-        .diff-pill.hard   { background: #fde8ec; }
-        .diff-pill-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 0.3rem; }
-        .diff-pill p { font-size: 0.83rem; color: #555; line-height: 1.5; }
-
-        .diagram-grid {
-            display: inline-grid;
-            gap: 2px;
-            background: #eee;
-            border-radius: 8px;
-            padding: 8px;
-            margin: 0.5rem 0 0.8rem;
-        }
-        .diagram-cell {
-            width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            font-size: 0.7rem; font-weight: 700;
-        }
-        .dc-empty { background: #ddd; }
-        .dc-blue  { background: #2196F3; color: white; }
-        .dc-red   { background: #F44336; color: white; }
-        .dc-sq    { background: rgba(33,150,243,0.35); border: 2px solid #2196F3; border-radius: 4px; color: #2196F3; }
-
-        .square-visual {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
-            width: 80px; height: 80px; margin: 0.5rem 0 0.8rem;
-        }
-
-        /* ── ANIMATIONS ── */
-        @keyframes fadeIn      { from{opacity:0}  to{opacity:1} }
-        @keyframes fadeInDown  { from{opacity:0;transform:translateY(-30px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes fadeInUp    { from{opacity:0;transform:translateY(30px)}  to{opacity:1;transform:translateY(0)} }
-        @keyframes scaleIn     { from{opacity:0;transform:scale(0.8)}        to{opacity:1;transform:scale(1)} }
-        @keyframes squareAppear { 0%{opacity:0;transform:scale(0.5)} 60%{transform:scale(1.1)} 100%{opacity:1;transform:scale(1)} }
-        @keyframes pulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.1);opacity:0.8} }
-
-        @media(max-width:768px){
-            .header{padding:1.5rem 1rem} .setup-screen{padding:1.5rem}
-            .option-button{min-width:100px;padding:0.75rem 1rem;font-size:0.9rem}
-            .board-container{padding:1rem} .difficulty-cards{grid-template-columns:1fr}
-        }
-        @media(max-width:480px){
-            .game-header{padding:1rem} .current-player{font-size:1rem}
-            .control-button{padding:0.6rem 1rem;font-size:0.85rem} .scoreboard{min-width:auto}
-        }
+        .game-screen { display:flex; flex-direction:column; gap:1.2rem; }
+        .game-topbar { display:flex; flex-wrap:wrap; gap:1rem; justify-content:space-between; align-items:center; background:var(--card); border:1px solid var(--border); padding:1rem 1.5rem; border-radius:14px; }
+        .turn-info { display:flex; align-items:center; gap:0.75rem; }
+        .turn-dot { width:22px; height:22px; border-radius:50%; border:2.5px solid rgba(255,255,255,0.3); animation:pulse 2s infinite; }
+        @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.12)} }
+        .turn-name { font-weight:700; font-size:1.05rem; }
+        .turn-you { font-size:0.78rem; color:var(--c4); font-weight:700; background:rgba(6,214,160,0.15); border:1px solid rgba(6,214,160,0.3); padding:0.1rem 0.5rem; border-radius:5px; }
+        .thinking-dot { display:inline-block; animation:thinkBlink 1s infinite; }
+        .thinking-dot:nth-child(2){animation-delay:0.2s;} .thinking-dot:nth-child(3){animation-delay:0.4s;}
+        @keyframes thinkBlink{0%,80%,100%{opacity:0.2}40%{opacity:1}}
+        .ctrl-btns { display:flex; gap:0.6rem; }
+        .ctrl-btn { padding:0.6rem 1.1rem; border:none; border-radius:9px; font-family:'Outfit',sans-serif; font-weight:600; cursor:pointer; transition:all 0.2s; font-size:0.88rem; }
+        .ctrl-btn.green { background:rgba(6,214,160,0.2); color:#06D6A0; border:1px solid rgba(6,214,160,0.4); }
+        .ctrl-btn.red { background:rgba(239,71,111,0.2); color:#EF476F; border:1px solid rgba(239,71,111,0.4); }
+        .ctrl-btn.blue { background:rgba(0,78,137,0.3); color:#4DB8FF; border:1px solid rgba(77,184,255,0.4); }
+        .ctrl-btn:hover { transform:translateY(-1px); filter:brightness(1.2); }
+        .game-layout { display:grid; grid-template-columns:1fr 280px; gap:1.2rem; align-items:start; }
+        @media(max-width:900px){ .game-layout{ grid-template-columns:1fr; } }
+        .board-wrap { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:1.5rem; display:flex; justify-content:center; overflow:auto; }
+        .sidebar { display:flex; flex-direction:column; gap:1rem; }
+        .scoreboard-card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:1.2rem; }
+        .score-title { font-size:0.8rem; font-weight:700; color:var(--muted); letter-spacing:0.1em; text-transform:uppercase; margin-bottom:1rem; }
+        .score-item { display:flex; justify-content:space-between; align-items:center; padding:0.7rem 0.9rem; border-radius:10px; margin-bottom:0.5rem; transition:all 0.3s; background:rgba(255,255,255,0.03); }
+        .score-item.active { background:rgba(255,210,63,0.12); border:1px solid rgba(255,210,63,0.3); }
+        .score-item.you { border:1px solid rgba(255,255,255,0.12); }
+        .score-left { display:flex; align-items:center; gap:0.7rem; }
+        .score-dot { width:16px; height:16px; border-radius:50%; border:2px solid rgba(255,255,255,0.2); flex-shrink:0; }
+        .score-name { font-weight:600; font-size:0.9rem; }
+        .score-val { font-family:'DM Mono',monospace; font-size:1.25rem; font-weight:700; color:var(--c1); }
+        .online-badge { display:inline-block; width:8px; height:8px; border-radius:50%; background:#06D6A0; box-shadow:0 0 6px rgba(6,214,160,0.7); margin-left:4px; }
+        .offline-badge { display:inline-block; width:8px; height:8px; border-radius:50%; background:#666; margin-left:4px; }
+        .winner-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:1000; display:flex; justify-content:center; align-items:center; animation:fadeIn 0.5s ease-out; }
+        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+        .winner-box { background:var(--card); border:1px solid var(--border); border-radius:24px; padding:2.5rem; max-width:440px; width:90%; text-align:center; animation:scaleIn 0.5s ease-out; }
+        @keyframes scaleIn{from{opacity:0;transform:scale(0.8)}to{opacity:1;transform:scale(1)}}
+        .winner-emoji { font-size:4rem; margin-bottom:1rem; }
+        .winner-title { font-size:2.5rem; font-weight:900; background:linear-gradient(135deg,var(--c3),var(--c1)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; margin-bottom:0.5rem; }
+        .winner-name { font-size:1.5rem; font-weight:700; margin-bottom:1.5rem; }
+        .final-list { margin-bottom:1.5rem; }
+        .final-row { display:flex; justify-content:space-between; align-items:center; padding:0.6rem 0.8rem; background:rgba(255,255,255,0.05); border-radius:8px; margin-bottom:0.4rem; }
+        .final-row .fr-name { display:flex; align-items:center; gap:0.6rem; font-weight:600; font-size:0.92rem; }
+        .final-row .fr-score { font-family:'DM Mono',monospace; font-weight:700; color:var(--c1); }
+        .manual-wrap { max-width:800px; margin:0 auto; }
+        .manual-section-title { font-size:1rem; font-weight:700; color:var(--c3); margin:1.5rem 0 0.8rem; display:flex; align-items:center; gap:0.5rem; }
+        .manual-p { color:var(--muted); line-height:1.7; font-size:0.93rem; margin-bottom:0.6rem; }
+        .manual-ol { padding-left:1.3rem; color:var(--muted); line-height:1.8; font-size:0.93rem; }
+        .tip-card { background:rgba(0,78,137,0.2); border-left:3px solid var(--c2); border-radius:10px; padding:0.9rem 1.1rem; margin-bottom:0.7rem; }
+        .tip-card strong { color:#4DB8FF; }
+        .tip-card p { color:var(--muted); font-size:0.88rem; line-height:1.6; margin-top:0.25rem; }
+        .diff-pills { display:grid; grid-template-columns:repeat(3,1fr); gap:0.75rem; }
+        @media(max-width:500px){.diff-pills{grid-template-columns:1fr;}}
+        .diff-pill-card { border-radius:12px; padding:1rem; }
+        .diff-pill-card.easy { background:rgba(6,214,160,0.1); border:1px solid rgba(6,214,160,0.2); }
+        .diff-pill-card.medium { background:rgba(255,184,0,0.1); border:1px solid rgba(255,184,0,0.2); }
+        .diff-pill-card.hard { background:rgba(239,71,111,0.1); border:1px solid rgba(239,71,111,0.2); }
+        .diff-pill-card .dpt { font-weight:700; font-size:0.9rem; margin-bottom:0.3rem; }
+        .diff-pill-card p { font-size:0.8rem; color:var(--muted); line-height:1.5; }
+        .notif { position:fixed; bottom:1.5rem; left:50%; transform:translateX(-50%); z-index:500; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:0.75rem 1.5rem; font-weight:600; font-size:0.9rem; box-shadow:0 8px 24px rgba(0,0,0,0.5); animation:slideUp 0.3s ease-out; white-space:nowrap; }
+        @keyframes slideUp{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+        .notif.success { border-color:rgba(6,214,160,0.5); color:#06D6A0; }
+        .notif.error { border-color:rgba(239,71,111,0.5); color:#EF476F; }
+        .notif.info { border-color:rgba(255,210,63,0.5); color:var(--c3); }
+        .fb-status-bar { display:flex; align-items:center; gap:0.6rem; padding:0.6rem 1rem; border-radius:10px; margin-bottom:1.5rem; font-size:0.85rem; font-weight:600; }
+        .fb-status-bar.connected { background:rgba(6,214,160,0.12); border:1px solid rgba(6,214,160,0.3); color:#06D6A0; }
+        .fb-status-bar.disconnected { background:rgba(239,71,111,0.12); border:1px solid rgba(239,71,111,0.3); color:#EF476F; }
+        .spinner { width:18px; height:18px; border:2px solid rgba(255,255,255,0.2); border-top-color:var(--c1); border-radius:50%; animation:spin 0.7s linear infinite; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+        @media(max-width:768px){ .main{padding:1.5rem 1rem;} }
+        input[type=text]:focus { outline:none; }
+        @keyframes squareAppear{0%{opacity:0;transform:scale(0.5)}60%{transform:scale(1.08)}100%{opacity:1;transform:scale(1)}}
     </style>
 </head>
 <body>
 <div id="root"></div>
 
+<script>
+// ─── FIREBASE CONFIG HARDCODÉE ────────────────────────────────────────────────
+const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyDMalqHWnYcQ-8UuxJDB3ZoGgZcArPMZe8",
+    authDomain: "square-e94b1.firebaseapp.com",
+    databaseURL: "https://square-e94b1-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "square-e94b1",
+    storageBucket: "square-e94b1.firebasestorage.app",
+    messagingSenderId: "865568704539",
+    appId: "1:865568704539:web:ae1897fbf167eb1c9690be"
+};
+
+let db = null;
+let firebaseReady = false;
+
+function initFirebase() {
+    try {
+        if (!firebase.apps.length) {
+            firebase.initializeApp(FIREBASE_CONFIG);
+        }
+        db = firebase.database();
+        firebaseReady = true;
+        console.log('✅ Firebase connecté');
+    } catch(e) {
+        console.error('❌ Firebase init error:', e);
+        firebaseReady = false;
+    }
+}
+initFirebase();
+
+function genRoomCode() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    return Array.from({length:6}, () => chars[Math.floor(Math.random()*chars.length)]).join('');
+}
+function genUserId() {
+    return 'u_' + Math.random().toString(36).slice(2,10);
+}
+</script>
+
 <script type="text/babel">
 const { useState, useEffect, useRef, useCallback } = React;
 
-// ─── TRANSLATIONS ──────────────────────────────────────────────────────────────
 const T = {
-    fr: {
-        title:"SQUARE", tagline:"Placer des points colorés et former des carrés",
-        setupTitle:"Configuration de la partie",
-        numPlayers:"Nombre de joueurs", player:"Joueur", players:"Joueurs",
-        gameMode:"Mode de jeu", playersOnly:"Joueurs seulement", vsComputer:"Contre l'ordinateur",
-        aiDifficulty:"Difficulté de l'IA",
-        gridSize:"Taille de la grille", small:"Petit", medium:"Moyen", large:"Grand", veryLarge:"Très grand",
-        playerColors:"Couleurs des joueurs", startGame:"Commencer la partie",
-        newGame:"Nouvelle partie", forfeit:"Déclarer forfait", scoreboard:"Tableau des scores",
-        victory:"Victoire !", draw:"Égalité !", squares:"carrés", square:"carré",
-        ai:"(IA)", easy:"Facile", mediumDiff:"Moyen", hard:"Difficile",
-        aiThinking:"L'IA réfléchit", turnOf:"Tour de",
-        easyDesc:"Placement aléatoire — idéal pour s'entraîner",
-        mediumDesc:"Saisit les carrés immédiats et bloque vos menaces",
-        hardDesc:"Minimax + évaluation stratégique profonde — très redoutable",
-        tabGame:"🎮 Jouer", tabManual:"📖 Manuel",
-        manualTitle:"Manuel du jeu",
-        manualSub:"Apprenez les règles et les stratégies de Square",
-        sec1:"Objectif",
-        sec2:"Comment jouer",
-        sec3:"Règles essentielles",
-        sec4:"Stratégies gagnantes",
-        sec5:"Niveaux de l'IA",
-        obj1:"Être le joueur qui a formé le <strong>plus de carrés</strong> à la fin de la partie.",
-        obj2:"Un carré est formé quand <strong>4 points de votre couleur</strong> occupent les 4 coins d'une même cellule de la grille.",
+    fr:{
+        title:"SQUARE", tagline:"Multijoueur en ligne • Jusqu'à 4 joueurs",
+        tabPlay:"🎮 Jouer", tabOnline:"🌐 En ligne", tabManual:"📖 Manuel",
+        localSetup:"Partie locale", numPlayers:"Joueurs", gameMode:"Mode", playersOnly:"Joueurs seulement", vsAI:"Vs IA",
+        aiDiff:"Difficulté IA", gridSize:"Grille",
+        small:"Petit", medium:"Moyen", large:"Grand", veryLarge:"Très grand",
+        colors:"Couleurs", start:"Lancer la partie 🚀",
+        easy:"Facile", mediumD:"Moyen", hard:"Difficile",
+        easyDesc:"Placement aléatoire", mediumDesc:"Saisit les carrés et bloque", hardDesc:"Minimax avancé",
+        player:"Joueur", players:"Joueurs", ai:"(IA)",
+        onlineTitle:"Mode En Ligne",
+        fbConnected:"🔥 Firebase connecté — Multijoueur actif",
+        fbDisconnected:"⚠️ Firebase non connecté",
+        createRoom:"Créer une salle", joinRoom:"Rejoindre",
+        createDesc:"Créez une salle et invitez jusqu'à 3 amis avec le code",
+        joinDesc:"Entrez le code d'une salle pour rejoindre",
+        enterCode:"Code de salle (6 lettres)", joinBtn:"Rejoindre →",
+        roomCode:"Code :", waiting:"En attente", playing:"En cours",
+        copyCode:"Copier le code", codeCopied:"Code copié !",
+        players_in_room:"Joueurs dans la salle",
+        waitingFor:"En attente d'autres joueurs…",
+        startOnline:"Lancer la partie 🚀", leaveRoom:"Quitter",
+        youLabel:"Toi", host:"Hôte", slot:"Slot libre",
+        yourName:"Votre pseudo :", name:"Nom",
+        chat:"Chat", chatPlaceholder:"Message…",
+        turnOf:"Tour de", yourTurn:"Votre tour !", waiting_turn:"En attente…",
+        newGame:"Nouvelle partie", forfeit:"Abandonner", backLobby:"← Lobby",
+        scoreboard:"Scores",
+        victory:"Victoire !", draw:"Égalité !",
+        squares:"carrés", square:"carré",
+        manualTitle:"Manuel du jeu", manualSub:"Apprenez à jouer à Square et à utiliser le mode en ligne",
+        sec1:"Objectif", sec2:"Comment jouer", sec4:"Stratégies", sec5:"IA", sec6:"Mode en ligne",
+        obj1:"Former le <strong>plus de carrés</strong> à la fin de la partie.",
+        obj2:"Un carré = <strong>4 points de votre couleur</strong> aux 4 coins d'une même cellule.",
         how1:"Les joueurs jouent à tour de rôle.",
-        how2:"À chaque tour, placez <strong>un point de votre couleur</strong> sur n'importe quelle intersection libre de la grille.",
-        how3:"Si votre point complète un ou plusieurs carrés, vous marquez des points — et <strong>vous rejouez !</strong>",
-        how4:"La partie se termine quand toutes les intersections sont occupées.",
+        how2:"Placez <strong>un point</strong> sur une intersection libre.",
+        how3:"Si vous complétez un carré, vous marquez et <strong>rejouez !</strong>",
+        how4:"La partie se termine quand toutes les intersections sont prises.",
         how5:"Le joueur avec le plus de carrés gagne.",
-        rule1:"<strong>Votre couleur uniquement :</strong> seuls les 4 coins de la même couleur forment un carré.",
-        rule2:"<strong>Carré simple :</strong> chaque cellule 1×1 de la grille compte. Pas de grands rectangles.",
-        rule3:"<strong>Rejouer :</strong> si vous complétez un carré, vous replacez immédiatement un point.",
-        rule4:"<strong>Grillee complète :</strong> la grille termine quand chaque intersection est prise.",
-        tip1t:"Anticipez à 3 coups",
-        tip1:"Avant de jouer, visualisez ce que vous ferez dans 2 ou 3 coups. Construire un carré prend 4 points — pensez dès le début à quelle cellule vous ciblez.",
-        tip2t:"Le triangle magique",
-        tip2:"Placez 3 points aux coins d'une cellule (L-shape). Votre adversaire ne peut pas vous bloquer : quel que soit le coin restant, c'est VOUS qui le placez au prochain tour et complétez le carré.",
-        tip3t:"Bloquez en priorité",
-        tip3:"Dès qu'un adversaire a 3 points sur les coins d'une cellule, bloquez immédiatement ce 4e coin — même si ça vous coûte un bon coup offensif.",
-        tip4t:"Clustering",
-        tip4:"Concentrez vos points dans une zone. Chaque point peut appartenir à plusieurs carrés à la fois : un seul point bien placé peut compléter 2 ou 3 carrés simultanément !",
-        tip5t:"Le sacrifice stratégique",
-        tip5:"Parfois, laisser l'adversaire prendre un carré pour construire une position qui vous en donnera 3 est un excellent échange. Pensez en termes de gain net.",
-        diff_easy_t:"😊 Facile",
-        diff_easy:"Placement aléatoire pur. L'IA ne réfléchit pas. Parfait pour les enfants ou pour apprendre les règles.",
-        diff_med_t:"🧠 Moyen",
-        diff_med:"L'IA prend tous les carrés immédiats, bloque vos menaces à 1 coup, et construit des clusters. Elle peut vous surprendre !",
-        diff_hard_t:"🔥 Difficile",
-        diff_hard:"Minimax avec élagage alpha-bêta, évaluation multi-facteurs, détection des quasi-carrés à 2 et 3 coins, anticipation des chaînes de réaction. Très difficile à battre.",
+        tip1t:"Anticipez à 3 coups", tip1:"Construire un carré prend 4 points — planifiez tôt.",
+        tip2t:"L-shape magique", tip2:"3 points aux coins = personne ne peut vous bloquer.",
+        tip3t:"Bloquez d'abord", tip3:"Adversaire à 3 coins = bloquez immédiatement.",
+        tip4t:"Clustering", tip4:"Concentrez vos points pour compléter plusieurs carrés.",
+        online1:"Créez une salle → partagez le code à 6 lettres à vos amis.",
+        online2:"Jusqu'à 4 joueurs par salle. L'hôte lance la partie.",
+        online3:"Connexion en temps réel via Firebase.",
+        online4:"Si un joueur se déconnecte, son tour est passé.",
+        diff_easy:"Placement aléatoire.", diff_med:"Prend les carrés et bloque.", diff_hard:"Minimax + alpha-beta.",
+        needName:"Entrez votre pseudo d'abord",
+        roomNotFound:"Salle introuvable",
+        roomFull:"Salle pleine (4 joueurs max)",
+        gameAlreadyStarted:"Partie déjà commencée",
+        codeInvalid:"Code invalide (6 lettres)",
+        need2players:"Il faut au moins 2 joueurs",
+        hostOnly:"Seul l'hôte peut lancer la partie",
+        loading:"Connexion…",
     },
-    en: {
-        title:"SQUARE", tagline:"Place colored dots and form squares",
-        setupTitle:"Game Setup",
-        numPlayers:"Number of players", player:"Player", players:"Players",
-        gameMode:"Game mode", playersOnly:"Players only", vsComputer:"VS Computer",
-        aiDifficulty:"AI Difficulty",
-        gridSize:"Grid size", small:"Small", medium:"Medium", large:"Large", veryLarge:"Very large",
-        playerColors:"Player colors", startGame:"Start Game",
-        newGame:"New Game", forfeit:"Forfeit", scoreboard:"Scoreboard",
-        victory:"Victory!", draw:"Draw!", squares:"squares", square:"square",
-        ai:"(AI)", easy:"Easy", mediumDiff:"Medium", hard:"Hard",
-        aiThinking:"AI is thinking", turnOf:"Turn of",
-        easyDesc:"Random placement — great for practice",
-        mediumDesc:"Takes immediate squares and blocks your threats",
-        hardDesc:"Minimax + deep strategic evaluation — truly formidable",
-        tabGame:"🎮 Play", tabManual:"📖 Manual",
-        manualTitle:"Game Manual",
-        manualSub:"Learn the rules and strategies of Square",
-        sec1:"Objective",
-        sec2:"How to play",
-        sec3:"Key rules",
-        sec4:"Winning strategies",
-        sec5:"AI levels",
-        obj1:"Be the player who formed the <strong>most squares</strong> at the end of the game.",
-        obj2:"A square is formed when <strong>4 dots of your color</strong> occupy the 4 corners of the same grid cell.",
-        how1:"Players take turns.",
-        how2:"On each turn, place <strong>one dot of your color</strong> on any free grid intersection.",
-        how3:"If your dot completes one or more squares, you score points — and <strong>you play again!</strong>",
-        how4:"The game ends when all intersections are occupied.",
-        how5:"The player with the most squares wins.",
-        rule1:"<strong>Your color only:</strong> only 4 corners of the same color form a square.",
-        rule2:"<strong>Simple square:</strong> each 1×1 grid cell counts. No big rectangles.",
-        rule3:"<strong>Play again:</strong> if you complete a square, you immediately place another dot.",
-        rule4:"<strong>Full grid:</strong> the game ends when every intersection is taken.",
-        tip1t:"Think 3 moves ahead",
-        tip1:"Before playing, visualize what you'll do in 2 or 3 moves. Building a square takes 4 dots — think early about which cell you're targeting.",
-        tip2t:"The magic L-shape",
-        tip2:"Place 3 dots at corners of a cell (L-shape). Your opponent cannot block you: whichever corner remains, YOU will place it next turn and complete the square.",
-        tip3t:"Block first",
-        tip3:"As soon as an opponent has 3 dots on the corners of a cell, immediately block that 4th corner — even if it costs you a good offensive move.",
-        tip4t:"Clustering",
-        tip4:"Concentrate your dots in one area. Each dot can belong to multiple squares at once: a single well-placed dot can complete 2 or 3 squares simultaneously!",
-        tip5t:"Strategic sacrifice",
-        tip5:"Sometimes letting the opponent take one square to build a position that gives you 3 is an excellent trade. Think in terms of net gain.",
-        diff_easy_t:"😊 Easy",
-        diff_easy:"Pure random placement. The AI doesn't think. Perfect for children or learning the rules.",
-        diff_med_t:"🧠 Medium",
-        diff_med:"The AI takes all immediate squares, blocks your 1-move threats, and builds clusters. It can surprise you!",
-        diff_hard_t:"🔥 Hard",
-        diff_hard:"Minimax with alpha-beta pruning, multi-factor evaluation, 2- and 3-corner near-square detection, reaction chain anticipation. Very hard to beat.",
+    en:{
+        title:"SQUARE", tagline:"Online Multiplayer • Up to 4 players",
+        tabPlay:"🎮 Play", tabOnline:"🌐 Online", tabManual:"📖 Manual",
+        localSetup:"Local Game", numPlayers:"Players", gameMode:"Mode", playersOnly:"Players only", vsAI:"VS AI",
+        aiDiff:"AI Difficulty", gridSize:"Grid",
+        small:"Small", medium:"Medium", large:"Large", veryLarge:"Very large",
+        colors:"Colors", start:"Start Game 🚀",
+        easy:"Easy", mediumD:"Medium", hard:"Hard",
+        easyDesc:"Random placement", mediumDesc:"Takes squares & blocks", hardDesc:"Advanced minimax",
+        player:"Player", players:"Players", ai:"(AI)",
+        onlineTitle:"Online Mode",
+        fbConnected:"🔥 Firebase connected — Multiplayer active",
+        fbDisconnected:"⚠️ Firebase not connected",
+        createRoom:"Create Room", joinRoom:"Join Room",
+        createDesc:"Create a room and invite up to 3 friends with the code",
+        joinDesc:"Enter a room code to join a game",
+        enterCode:"Room code (6 letters)", joinBtn:"Join →",
+        roomCode:"Code:", waiting:"Waiting", playing:"Playing",
+        copyCode:"Copy code", codeCopied:"Code copied!",
+        players_in_room:"Players in room",
+        waitingFor:"Waiting for more players…",
+        startOnline:"Start Game 🚀", leaveRoom:"Leave",
+        youLabel:"You", host:"Host", slot:"Empty slot",
+        yourName:"Your name:", name:"Name",
+        chat:"Chat", chatPlaceholder:"Message…",
+        turnOf:"Turn of", yourTurn:"Your turn!", waiting_turn:"Waiting…",
+        newGame:"New Game", forfeit:"Forfeit", backLobby:"← Lobby",
+        scoreboard:"Scores",
+        victory:"Victory!", draw:"Draw!",
+        squares:"squares", square:"square",
+        manualTitle:"Game Manual", manualSub:"Learn to play Square and use online mode",
+        sec1:"Objective", sec2:"How to play", sec4:"Strategies", sec5:"AI", sec6:"Online Mode",
+        obj1:"Form the <strong>most squares</strong> at the end of the game.",
+        obj2:"A square = <strong>4 dots of your color</strong> at all 4 corners of a cell.",
+        how1:"Players take turns.", how2:"Place <strong>one dot</strong> on any free intersection.",
+        how3:"Complete a square → score and <strong>play again!</strong>",
+        how4:"Game ends when all intersections are taken.", how5:"Most squares wins.",
+        tip1t:"Think 3 ahead", tip1:"Building a square takes 4 dots — plan early.",
+        tip2t:"Magic L-shape", tip2:"3 dots at corners = opponent can't block.",
+        tip3t:"Block first", tip3:"Opponent has 3 corners = block immediately.",
+        tip4t:"Clustering", tip4:"Concentrate dots to complete multiple squares.",
+        online1:"Create a room → share the 6-letter code with friends.",
+        online2:"Up to 4 players per room. Host starts the game.",
+        online3:"Real-time via Firebase Realtime Database.",
+        online4:"If a player disconnects, their turn is skipped.",
+        diff_easy:"Pure random.", diff_med:"Takes squares & blocks.", diff_hard:"Minimax + alpha-beta.",
+        needName:"Enter your name first",
+        roomNotFound:"Room not found",
+        roomFull:"Room full (max 4 players)",
+        gameAlreadyStarted:"Game already started",
+        codeInvalid:"Invalid code (6 letters)",
+        need2players:"Need at least 2 players",
+        hostOnly:"Only the host can start",
+        loading:"Connecting…",
     }
 };
 
-const COLORS = {
-    blue:   '#2196F3',
-    red:    '#F44336',
-    yellow: '#FFC107',
-    green:  '#4CAF50',
-    purple: '#9C27B0',
-    orange: '#FF9800'
-};
+const COLORS = { blue:'#2196F3', red:'#F44336', yellow:'#FFC107', green:'#4CAF50', purple:'#9C27B0', orange:'#FF9800' };
+const COLOR_KEYS = Object.keys(COLORS);
 
-// ─── SQUARE DETECTION ──────────────────────────────────────────────────────────
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
 function detectSquares(dots, rows, cols, existingSquares) {
     const formed = [];
-    for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-            if (existingSquares.some(s => s.row === r && s.col === c)) continue;
-            const tl = dots[`${r}-${c}`];
-            const tr = dots[`${r}-${c+1}`];
-            const bl = dots[`${r+1}-${c}`];
-            const br = dots[`${r+1}-${c+1}`];
-            if (tl && tl === tr && tl === bl && tl === br)
-                formed.push({ row: r, col: c, color: tl });
-        }
+    for (let r=0; r<rows; r++) for (let c=0; c<cols; c++) {
+        if (existingSquares.some(s=>s.row===r&&s.col===c)) continue;
+        const tl=dots[`${r}-${c}`], tr=dots[`${r}-${c+1}`], bl=dots[`${r+1}-${c}`], br=dots[`${r+1}-${c+1}`];
+        if (tl && tl===tr && tl===bl && tl===br) formed.push({row:r, col:c, color:tl});
     }
     return formed;
 }
 
-// ─── AI UTILITIES ──────────────────────────────────────────────────────────────
-
-function getAvailable(dots, rows, cols) {
-    const av = [];
-    for (let r = 0; r <= rows; r++)
-        for (let c = 0; c <= cols; c++)
-            if (!dots[`${r}-${c}`]) av.push({ row: r, col: c });
-    return av;
-}
-
-// How many squares does placing `color` at (row,col) immediately complete?
-function immediateGain(dots, row, col, color, rows, cols, existingSquares) {
-    const testDots = { ...dots, [`${row}-${col}`]: color };
-    return detectSquares(testDots, rows, cols, existingSquares).filter(s => s.color === color).length;
-}
-
-// Count squares opponent `oppColor` would immediately complete if they play at (row,col)
-function opponentGain(dots, row, col, oppColor, rows, cols, existingSquares) {
-    const testDots = { ...dots, [`${row}-${col}`]: oppColor };
-    return detectSquares(testDots, rows, cols, existingSquares).filter(s => s.color === oppColor).length;
-}
-
-// For each grid cell, count corners of given color
-function cellCornerCount(dots, sqR, sqC, color) {
-    const corners = [
-        dots[`${sqR}-${sqC}`],
-        dots[`${sqR}-${sqC+1}`],
-        dots[`${sqR+1}-${sqC}`],
-        dots[`${sqR+1}-${sqC+1}`]
-    ];
-    return {
-        mine:  corners.filter(c => c === color).length,
-        other: corners.filter(c => c && c !== color).length,
-        empty: corners.filter(c => !c).length
-    };
-}
-
-// ─── MEDIUM AI ─────────────────────────────────────────────────────────────────
-// Phase 1: take immediate squares (sorted by gain)
-// Phase 2: block opponent immediate threats (sorted by threat magnitude)
-// Phase 3: build near own dots — score by how many 2-corner setups we create
-// Phase 4: slight random among top candidates
-
-function scoreMedium(dots, row, col, aiColor, opponentColors, rows, cols, existingSquares) {
-    const testDots = { ...dots, [`${row}-${col}`]: aiColor };
-
-    // Own immediate gain (very high priority)
-    const gain = immediateGain(dots, row, col, aiColor, rows, cols, existingSquares) * 1000;
-
-    // Block: how many opponent immediate threats does this cell neutralize?
-    let blockScore = 0;
-    for (const oc of opponentColors) {
-        blockScore += opponentGain(dots, row, col, oc, rows, cols, existingSquares) * 500;
+// ─── AI ───────────────────────────────────────────────────────────────────────
+function getAvail(dots,rows,cols){const a=[];for(let r=0;r<=rows;r++)for(let c=0;c<=cols;c++)if(!dots[`${r}-${c}`])a.push({row:r,col:c});return a;}
+function immGain(dots,row,col,color,rows,cols,sq){const t={...dots,[`${row}-${col}`]:color};return detectSquares(t,rows,cols,sq).filter(s=>s.color===color).length;}
+function oppGain(dots,row,col,oc,rows,cols,sq){const t={...dots,[`${row}-${col}`]:oc};return detectSquares(t,rows,cols,sq).filter(s=>s.color===oc).length;}
+function cellCC(dots,r,c,color){const corners=[dots[`${r}-${c}`],dots[`${r}-${c+1}`],dots[`${r+1}-${c}`],dots[`${r+1}-${c+1}`]];return{mine:corners.filter(x=>x===color).length,other:corners.filter(x=>x&&x!==color).length};}
+function aiPickMove(dots,rows,cols,existingSquares,aiColor,allColors,difficulty){
+    const av=getAvail(dots,rows,cols);if(!av.length)return null;
+    if(difficulty==='easy')return av[Math.floor(Math.random()*av.length)];
+    const oppColors=allColors.filter(c=>c!==aiColor);
+    if(difficulty==='medium'){
+        const scored=av.map(d=>{
+            const g=immGain(dots,d.row,d.col,aiColor,rows,cols,existingSquares)*1000;
+            let b=0;for(const oc of oppColors)b+=oppGain(dots,d.row,d.col,oc,rows,cols,existingSquares)*500;
+            const td={...dots,[`${d.row}-${d.col}`]:aiColor};let s=0;
+            for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){const{mine,other}=cellCC(td,r,c,aiColor);if(!other){if(mine===3)s+=80;else if(mine===2)s+=20;}}
+            return{...d,score:g+b+s};
+        });
+        scored.sort((a,b)=>b.score-a.score);const best=scored[0].score;
+        if(best===0)return scored[Math.floor(Math.random()*Math.ceil(scored.length*0.4))];
+        const tied=scored.filter(d=>d.score>=best*0.9);return tied[Math.floor(Math.random()*Math.min(tied.length,3))];
     }
-
-    // Setup: count cells where we now have 2 or 3 corners (after placing)
-    let setup = 0;
-    for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-            const { mine, other } = cellCornerCount(testDots, r, c, aiColor);
-            if (other === 0) {
-                if (mine === 3) setup += 80;
-                else if (mine === 2) setup += 20;
-            }
-        }
-    }
-
-    return gain + blockScore + setup;
-}
-
-// ─── HARD AI — MINIMAX + ALPHA-BETA ───────────────────────────────────────────
-
-// Position evaluation: score the board from aiColor's perspective
-function evaluatePosition(dots, rows, cols, existingSquares, aiColor, opponentColors) {
-    let score = 0;
-
-    // Count formed squares
-    for (const sq of existingSquares) {
-        if (sq.color === aiColor) score += 100;
-        else score -= 100;
-    }
-
-    // Evaluate near-square potential for each cell
-    for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-            const { mine, other, empty } = cellCornerCount(dots, r, c, aiColor);
-
-            if (other === 0) {
-                // Pure AI cell
-                if (mine === 3) score += 60;     // one away from square
-                else if (mine === 2) score += 15; // two away
-                else if (mine === 1) score += 3;
-            }
-
-            for (const oc of opponentColors) {
-                const opp = cellCornerCount(dots, r, c, oc);
-                if (opp.other === 0) {
-                    if (opp.mine === 3) score -= 55;
-                    else if (opp.mine === 2) score -= 14;
-                    else if (opp.mine === 1) score -= 2;
-                }
-            }
-        }
-    }
-
-    return score;
-}
-
-// Returns { score, move }
-// `turnColors` is the rotation of colors starting with current player
-function minimax(dots, rows, cols, existingSquares, turnColors, aiColor, depth, alpha, beta, maximizing) {
-    const available = getAvailable(dots, rows, cols);
-
-    if (depth === 0 || available.length === 0) {
-        return { score: evaluatePosition(dots, rows, cols, existingSquares, aiColor, turnColors.filter(c => c !== aiColor)) };
-    }
-
-    const currentColor = turnColors[0];
-    const nextTurnColors = [...turnColors.slice(1), turnColors[0]];
-
-    // Move ordering: try immediate wins first, then threats, then rest
-    const opponentColors = turnColors.filter(c => c !== currentColor);
-    const scoredMoves = available.map(d => {
-        const g = immediateGain(dots, d.row, d.col, currentColor, rows, cols, existingSquares);
-        let blockVal = 0;
-        for (const oc of opponentColors)
-            blockVal = Math.max(blockVal, opponentGain(dots, d.row, d.col, oc, rows, cols, existingSquares));
-        return { ...d, priority: g * 1000 + blockVal * 500 };
+    const wins=av.map(d=>({...d,g:immGain(dots,d.row,d.col,aiColor,rows,cols,existingSquares)})).filter(d=>d.g>0);
+    if(wins.length){wins.sort((a,b)=>b.g-a.g);return wins[0];}
+    const blocks=[];for(const oc of oppColors)for(const d of av){const g=oppGain(dots,d.row,d.col,oc,rows,cols,existingSquares);if(g>0)blocks.push({...d,g});}
+    if(blocks.length){blocks.sort((a,b)=>b.g-a.g);return blocks[0];}
+    const strat=av.map(d=>{
+        const td={...dots,[`${d.row}-${d.col}`]:aiColor};let sc=0;
+        for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){const{mine,other}=cellCC(td,r,c,aiColor);if(!other){if(mine===3)sc+=120;else if(mine===2)sc+=30;}for(const oc of oppColors){const op=cellCC(td,r,c,oc);if(!op.other){if(op.mine===3)sc-=110;else if(op.mine===2)sc-=25;}}}
+        return{...d,sc};
     });
-    scoredMoves.sort((a, b) => b.priority - a.priority);
-
-    // Limit branching: consider top N moves to keep depth feasible
-    const topMoves = scoredMoves.slice(0, Math.min(scoredMoves.length, depth >= 3 ? 8 : 16));
-
-    if (maximizing) {
-        let best = -Infinity, bestMove = topMoves[0];
-        for (const d of topMoves) {
-            const newDots = { ...dots, [`${d.row}-${d.col}`]: currentColor };
-            const formed = detectSquares(newDots, rows, cols, existingSquares).filter(s => s.color === currentColor);
-            const newSquares = formed.length ? [...existingSquares, ...formed] : existingSquares;
-
-            // If scored, same player goes again (depth same)
-            const nextDepth = depth - (formed.length === 0 ? 1 : 0);
-            const nextTurn = formed.length > 0 ? turnColors : nextTurnColors;
-
-            const { score } = minimax(newDots, rows, cols, newSquares, nextTurn, aiColor, nextDepth - (formed.length > 0 ? 1 : 0), alpha, beta, currentColor === aiColor);
-            const adjusted = score + (formed.length > 0 && currentColor === aiColor ? formed.length * 100 : 0)
-                                   - (formed.length > 0 && currentColor !== aiColor ? formed.length * 100 : 0);
-            if (adjusted > best) { best = adjusted; bestMove = d; }
-            alpha = Math.max(alpha, best);
-            if (beta <= alpha) break;
-        }
-        return { score: best, move: bestMove };
-    } else {
-        let best = Infinity, bestMove = topMoves[0];
-        for (const d of topMoves) {
-            const newDots = { ...dots, [`${d.row}-${d.col}`]: currentColor };
-            const formed = detectSquares(newDots, rows, cols, existingSquares).filter(s => s.color === currentColor);
-            const newSquares = formed.length ? [...existingSquares, ...formed] : existingSquares;
-
-            const nextDepth = depth - (formed.length === 0 ? 1 : 0);
-            const nextTurn = formed.length > 0 ? turnColors : nextTurnColors;
-
-            const { score } = minimax(newDots, rows, cols, newSquares, nextTurn, aiColor, nextDepth - (formed.length > 0 ? 1 : 0), alpha, beta, currentColor === aiColor);
-            const adjusted = score - (formed.length > 0 && currentColor !== aiColor ? formed.length * 100 : 0);
-            if (adjusted < best) { best = adjusted; bestMove = d; }
-            beta = Math.min(beta, best);
-            if (beta <= alpha) break;
-        }
-        return { score: best, move: bestMove };
-    }
+    strat.sort((a,b)=>b.sc-a.sc);return strat[0]||av[Math.floor(Math.random()*av.length)];
 }
 
-// Multi-phase hard AI: minimax + rich heuristics
-function hardAIPick(dots, rows, cols, existingSquares, aiColor, allColors) {
-    const available = getAvailable(dots, rows, cols);
-    if (available.length === 0) return null;
-
-    const opponentColors = allColors.filter(c => c !== aiColor);
-    const totalCells = (rows + 1) * (cols + 1);
-    const filled = Object.keys(dots).length;
-    const fillRatio = filled / totalCells;
-
-    // ── Phase 1: Take immediate square(s) — greedy, take the max ──────────────
-    const winMoves = available.map(d => ({
-        ...d, gain: immediateGain(dots, d.row, d.col, aiColor, rows, cols, existingSquares)
-    })).filter(d => d.gain > 0);
-    if (winMoves.length > 0) {
-        winMoves.sort((a, b) => b.gain - a.gain);
-        return winMoves[0];
-    }
-
-    // ── Phase 2: Block critical threats (opponent has 3 corners = deadly) ──────
-    const criticalBlocks = [];
-    for (const oc of opponentColors) {
-        for (const d of available) {
-            const g = opponentGain(dots, d.row, d.col, oc, rows, cols, existingSquares);
-            if (g > 0) criticalBlocks.push({ ...d, threatGain: g, oc });
-        }
-    }
-    if (criticalBlocks.length > 0) {
-        criticalBlocks.sort((a, b) => b.threatGain - a.threatGain);
-        return criticalBlocks[0];
-    }
-
-    // ── Phase 3: Detect "setup traps" — opponent has 2 corners, we can block early ──
-    // Also detect cells where WE have 2 corners and can build the L-shape
-    const strategicMoves = available.map(d => {
-        const testDots = { ...dots, [`${d.row}-${d.col}`]: aiColor };
-        let mySetup3 = 0, mySetup2 = 0, oppDanger2 = 0, oppDanger3 = 0;
-
-        for (let r = 0; r < rows; r++) {
-            for (let c = 0; c < cols; c++) {
-                // My future near-squares after placing here
-                const my = cellCornerCount(testDots, r, c, aiColor);
-                if (my.other === 0) {
-                    if (my.mine === 3) mySetup3 += 1;
-                    else if (my.mine === 2) mySetup2 += 1;
-                }
-                // Opponent's near-squares (that this move blocks)
-                for (const oc of opponentColors) {
-                    const op = cellCornerCount(testDots, r, c, oc);
-                    if (op.mine === 3 && op.other === 0) oppDanger3 += 1;
-                    else if (op.mine === 2 && op.other === 0) oppDanger2 += 1;
-                }
-            }
-        }
-
-        // Also check: does this move prevent opponent from forming an L-shape next turn?
-        // Count how many cells would become 2-corner for opponent if they played here instead
-        let oppGainIfTheyPlay = 0;
-        for (const oc of opponentColors) {
-            const testOpp = { ...dots, [`${d.row}-${d.col}`]: oc };
-            for (let r = 0; r < rows; r++) {
-                for (let c = 0; c < cols; c++) {
-                    const op = cellCornerCount(testOpp, r, c, oc);
-                    if (op.mine === 3 && op.other === 0) oppGainIfTheyPlay += 3;
-                    else if (op.mine === 2 && op.other === 0) oppGainIfTheyPlay += 1;
-                }
-            }
-        }
-
-        const score = mySetup3 * 120 + mySetup2 * 30
-                    - oppDanger3 * 110 - oppDanger2 * 25
-                    + oppGainIfTheyPlay * 15;
-
-        return { ...d, score };
-    });
-
-    strategicMoves.sort((a, b) => b.score - a.score);
-
-    // ── Phase 4: Minimax look-ahead (depth varies by board fill) ──────────────
-    // More depth early, less at endgame (more cells = more options = slower)
-    const depth = available.length > 30 ? 3 : available.length > 15 ? 4 : 5;
-
-    // Only run minimax if board is not too big (performance guard)
-    const runMinimax = (rows * cols) <= 100;
-
-    if (runMinimax) {
-        const turnColors = [aiColor, ...opponentColors];
-        const { move } = minimax(dots, rows, cols, existingSquares, turnColors, aiColor, depth, -Infinity, Infinity, true);
-        if (move) {
-            // Combine minimax suggestion with strategic score
-            const mmMove = strategicMoves.find(m => m.row === move.row && m.col === move.col);
-            const mmScore = mmMove ? mmMove.score : 0;
-            // Weight: minimax dominant, but if strategic score is much higher for another cell, consider it
-            const blended = strategicMoves.map(m => ({
-                ...m,
-                final: (m.row === move.row && m.col === move.col ? 500 : 0) + m.score * 0.3
-            }));
-            blended.sort((a, b) => b.final - a.final);
-            return blended[0];
-        }
-    }
-
-    // Fallback: pure strategic heuristic
-    return strategicMoves[0] || available[Math.floor(Math.random() * available.length)];
-}
-
-// ─── MASTER AI DISPATCHER ──────────────────────────────────────────────────────
-function aiPickMove(dots, rows, cols, existingSquares, aiColor, allColors, difficulty) {
-    const available = getAvailable(dots, rows, cols);
-    if (available.length === 0) return null;
-
-    if (difficulty === 'easy') {
-        return available[Math.floor(Math.random() * available.length)];
-    }
-
-    if (difficulty === 'medium') {
-        const opponentColors = allColors.filter(c => c !== aiColor);
-
-        // Score every available cell
-        const scored = available.map(d => ({
-            ...d,
-            score: scoreMedium(dots, d.row, d.col, aiColor, opponentColors, rows, cols, existingSquares)
-        }));
-        scored.sort((a, b) => b.score - a.score);
-
-        const best = scored[0].score;
-
-        // If best score is 0 (no clear move), pick randomly from top 40%
-        if (best === 0) {
-            const pool = scored.slice(0, Math.max(1, Math.ceil(scored.length * 0.4)));
-            return pool[Math.floor(Math.random() * pool.length)];
-        }
-
-        // Among moves with equal best score, pick randomly (slight unpredictability)
-        const tied = scored.filter(d => d.score >= best * 0.9);
-        return tied[Math.floor(Math.random() * Math.min(tied.length, 3))];
-    }
-
-    if (difficulty === 'hard') {
-        return hardAIPick(dots, rows, cols, existingSquares, aiColor, allColors);
-    }
-
-    return available[Math.floor(Math.random() * available.length)];
-}
-
-// ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
-const SquareGame = () => {
-    const [lang, setLang]         = useState('fr');
+// ═══════════════════════════════════════════════════════════════════════════════
+// MAIN APP
+// ═══════════════════════════════════════════════════════════════════════════════
+const App = () => {
+    const [lang, setLang]   = useState('fr');
     const t = T[lang];
+    const [tab, setTab]     = useState('play');
+    const [notif, setNotif] = useState(null);
 
-    const [tab, setTab]           = useState('game'); // 'game' | 'manual'
+    // Local game
     const [gameState, setGameState] = useState('setup');
     const [numPlayers, setNumPlayers] = useState(2);
-    const [vsAI, setVsAI]         = useState(false);
-    const [aiDiff, setAiDiff]     = useState('medium');
-    const [gridSize, setGridSize] = useState({ rows: 8, cols: 8 });
-    const [players, setPlayers]   = useState([
-        { id:1, name:`${T.fr.player} 1`, color:'blue',  isAI:false, score:0 },
-        { id:2, name:`${T.fr.player} 2`, color:'red',   isAI:false, score:0 }
+    const [vsAI, setVsAI]   = useState(false);
+    const [aiDiff, setAiDiff] = useState('medium');
+    const [gridSize, setGridSize] = useState({rows:8,cols:8});
+    const [players, setPlayers] = useState([
+        {id:1,name:'Joueur 1',color:'blue',isAI:false,score:0},
+        {id:2,name:'Joueur 2',color:'red',isAI:false,score:0}
     ]);
-    const [curIdx, setCurIdx]     = useState(0);
-    const [dots, setDots]         = useState({});
-    const [squares, setSquares]   = useState([]);
+    const [curIdx, setCurIdx] = useState(0);
+    const [dots, setDots]     = useState({});
+    const [squares, setSquares] = useState([]);
     const [aiThinking, setAiThinking] = useState(false);
 
-    const stateRef = useRef({ dots, squares, players, curIdx, gameState, gridSize });
-    useEffect(() => {
-        stateRef.current = { dots, squares, players, curIdx, gameState, gridSize };
-    });
+    // Online
+    const [myId]    = useState(() => genUserId());
+    const [myName, setMyName]   = useState('');
+    const [myColor, setMyColor] = useState('blue');
+    const [onlineMode, setOnlineMode] = useState('lobby');
+    const [room, setRoom]       = useState(null);
+    const [joinCode, setJoinCode] = useState('');
+    const [chatMessages, setChatMessages] = useState([]);
+    const [chatInput, setChatInput] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const chatEndRef = useRef(null);
+    const roomListenerRef = useRef(null);
+    const chatListenerRef = useRef(null);
+    const stateRef = useRef({});
 
     useEffect(() => {
+        stateRef.current = {dots,squares,players,curIdx,gameState,gridSize,aiDiff};
+    });
+
+    const showNotif = (msg, type='info', dur=3000) => {
+        setNotif({msg,type});
+        setTimeout(() => setNotif(null), dur);
+    };
+
+    // Init local players
+    useEffect(() => {
         if (gameState !== 'setup') return;
-        const keys = Object.keys(COLORS);
         const next = [];
-        for (let i = 0; i < numPlayers; i++) {
-            next.push({
-                id: i+1,
-                name: `${t.player} ${i+1}`,
-                color: keys[i % keys.length],
-                isAI: vsAI && i > 0,
-                score: 0
-            });
+        for (let i=0; i<numPlayers; i++) {
+            next.push({id:i+1, name:`${t.player} ${i+1}`, color:COLOR_KEYS[i%COLOR_KEYS.length], isAI:vsAI&&i>0, score:0});
         }
         setPlayers(next);
     }, [numPlayers, vsAI, lang, gameState]);
 
-    // ── Core turn logic ───────────────────────────────────────────────────────
-    const applyMove = useCallback((row, col, _dots, _squares, _players, _curIdx, _gridSize) => {
-        if (gameState !== 'playing') return;
+    // ── LOCAL GAME ────────────────────────────────────────────────────────────
+    const applyMove = useCallback((row,col,_dots,_sq,_pl,_ci,_gs) => {
+        if (stateRef.current.gameState !== 'playing') return;
         if (_dots[`${row}-${col}`]) return;
-
-        const player   = _players[_curIdx];
-        const newDots  = { ..._dots, [`${row}-${col}`]: player.color };
-        const formed   = detectSquares(newDots, _gridSize.rows, _gridSize.cols, _squares);
-        const mine     = formed.filter(s => s.color === player.color);
-
-        let newSquares = _squares;
-        let newPlayers = _players;
-
+        const player = _pl[_ci];
+        const newDots = {..._dots, [`${row}-${col}`]:player.color};
+        const formed  = detectSquares(newDots, _gs.rows, _gs.cols, _sq);
+        const mine    = formed.filter(s=>s.color===player.color);
+        let newSq=_sq, newPl=_pl;
         if (mine.length > 0) {
-            const base     = _squares.filter(s => s.color === player.color).length;
-            const numbered = mine.map((sq, i) => ({ ...sq, number: base + i + 1 }));
-            newSquares = [..._squares, ...numbered];
-            newPlayers = _players.map((p, i) =>
-                i === _curIdx ? { ...p, score: p.score + mine.length } : p
-            );
+            const base = _sq.filter(s=>s.color===player.color).length;
+            const numbered = mine.map((sq,i)=>({...sq, number:base+i+1}));
+            newSq = [..._sq, ...numbered];
+            newPl = _pl.map((p,i)=>i===_ci?{...p,score:p.score+mine.length}:p);
         }
-
-        const nextIdx  = (_curIdx + 1) % _players.length;
-        const totalDots = (_gridSize.rows + 1) * (_gridSize.cols + 1);
-        const done     = Object.keys(newDots).length >= totalDots;
-
-        setDots(newDots);
-        setSquares(newSquares);
-        setPlayers(newPlayers);
-        setCurIdx(nextIdx);
-
-        if (done) { setTimeout(() => setGameState('finished'), 400); return; }
-
-        if (_players[nextIdx].isAI) {
+        const nextIdx = (_ci+1) % _pl.length;
+        const total = (_gs.rows+1)*(_gs.cols+1);
+        const done  = Object.keys(newDots).length >= total;
+        setDots(newDots); setSquares(newSq); setPlayers(newPl); setCurIdx(nextIdx);
+        if (done) { setTimeout(()=>setGameState('finished'),400); return; }
+        if (_pl[nextIdx].isAI) {
             setAiThinking(true);
-            const delay = aiDiff === 'hard' ? 900 : aiDiff === 'medium' ? 550 : 350;
-            setTimeout(() => {
+            const delay = stateRef.current.aiDiff==='hard'?800:stateRef.current.aiDiff==='medium'?500:300;
+            setTimeout(()=>{
                 const s = stateRef.current;
                 if (s.gameState !== 'playing') { setAiThinking(false); return; }
-                const allColors = s.players.map(p => p.color);
-                const move = aiPickMove(
-                    newDots, s.gridSize.rows, s.gridSize.cols,
-                    newSquares, s.players[nextIdx].color,
-                    allColors, aiDiff
-                );
+                const allColors = s.players.map(p=>p.color);
+                const move = aiPickMove(newDots,s.gridSize.rows,s.gridSize.cols,newSq,s.players[nextIdx].color,allColors,s.aiDiff);
                 setAiThinking(false);
-                if (move) applyMove(move.row, move.col, newDots, newSquares, newPlayers, nextIdx, s.gridSize);
+                if (move) applyMove(move.row,move.col,newDots,newSq,newPl,nextIdx,s.gridSize);
             }, delay);
         }
-    }, [gameState, aiDiff]);
+    },[]);
 
-    const handleDotClick = (row, col) => {
-        const { dots:d, squares:sq, players:pl, curIdx:ci, gridSize:gs } = stateRef.current;
+    const handleDotClick = (row,col) => {
+        const {dots:d,squares:sq,players:pl,curIdx:ci,gridSize:gs} = stateRef.current;
         if (pl[ci].isAI || aiThinking) return;
-        applyMove(row, col, d, sq, pl, ci, gs);
+        applyMove(row,col,d,sq,pl,ci,gs);
     };
 
-    const startGame = () => {
-        const reset = players.map(p => ({ ...p, score: 0 }));
-        setPlayers(reset); setDots({}); setSquares([]); setCurIdx(0); setAiThinking(false);
+    const startLocal = () => {
+        const r = players.map(p=>({...p,score:0}));
+        setPlayers(r); setDots({}); setSquares([]); setCurIdx(0); setAiThinking(false);
         setGameState('playing');
-        if (reset[0].isAI) {
+        if (r[0].isAI) {
             setAiThinking(true);
-            const allColors = reset.map(p => p.color);
-            setTimeout(() => {
-                const move = aiPickMove({}, gridSize.rows, gridSize.cols, [], reset[0].color, allColors, aiDiff);
+            setTimeout(()=>{
+                const allColors = r.map(p=>p.color);
+                const move = aiPickMove({},gridSize.rows,gridSize.cols,[],r[0].color,allColors,aiDiff);
                 setAiThinking(false);
-                if (move) applyMove(move.row, move.col, {}, [], reset, 0, gridSize);
-            }, 600);
+                if (move) applyMove(move.row,move.col,{},[],r,0,gridSize);
+            },600);
         }
     };
 
-    const newGame  = () => { setGameState('setup'); setDots({}); setSquares([]); setCurIdx(0); setAiThinking(false); };
-    const forfeit  = () => { setGameState('finished'); setAiThinking(false); };
-
-    const updateColor = (id, color) => {
-        if (players.some(p => p.id !== id && p.color === color)) return;
-        setPlayers(players.map(p => p.id === id ? { ...p, color } : p));
+    const newLocalGame = () => { setGameState('setup'); setDots({}); setSquares([]); setCurIdx(0); setAiThinking(false); };
+    const updateColor  = (id,color) => {
+        if (players.some(p=>p.id!==id&&p.color===color)) return;
+        setPlayers(players.map(p=>p.id===id?{...p,color}:p));
     };
 
-    // ── RENDER: Setup ─────────────────────────────────────────────────────────
-    const renderSetup = () => (
-        <div className="setup-screen">
-            <h2 className="setup-title">{t.setupTitle}</h2>
+    // ─── FIREBASE ROOM LISTENER ───────────────────────────────────────────────
+    const attachRoomListener = useCallback((code) => {
+        if (roomListenerRef.current) roomListenerRef.current.off();
+        if (chatListenerRef.current) chatListenerRef.current.off();
 
-            <div className="setup-section">
-                <div className="section-label">{t.numPlayers}</div>
-                <div className="button-group">
-                    {[2,3,4].map(n => (
-                        <button key={n} className={`option-button ${numPlayers===n?'selected':''}`}
-                            onClick={() => setNumPlayers(n)}>
-                            {n} {n>1?t.players:t.player}
-                        </button>
-                    ))}
-                </div>
-            </div>
+        const ref = db.ref(`rooms/${code}`);
+        roomListenerRef.current = ref;
+        ref.on('value', snap => {
+            const data = snap.val();
+            if (!data) {
+                setOnlineMode('lobby');
+                setRoom(null);
+                return;
+            }
+            setRoom(data);
+            if (data.gameStarted && !data.gameFinished) {
+                setOnlineMode('game');
+            }
+        });
 
-            <div className="setup-section">
-                <div className="section-label">{t.gameMode}</div>
-                <div className="button-group">
-                    <button className={`option-button ${!vsAI?'selected':''}`} onClick={() => setVsAI(false)}>👥 {t.playersOnly}</button>
-                    <button className={`option-button ${vsAI?'selected':''}`}  onClick={() => setVsAI(true)}>🤖 {t.vsComputer}</button>
-                </div>
-            </div>
+        const chatRef = db.ref(`rooms/${code}/chat`);
+        chatListenerRef.current = chatRef;
+        chatRef.on('value', snap => {
+            const msgs = [];
+            snap.forEach(child => msgs.push(child.val()));
+            setChatMessages(msgs);
+        });
 
-            {vsAI && (
-                <div className="setup-section">
-                    <div className="section-label">{t.aiDifficulty}</div>
-                    <div className="difficulty-cards">
-                        {[
-                            { key:'easy',   label:t.easy,       desc:t.easyDesc,   emoji:'😊', cls:'easy'   },
-                            { key:'medium', label:t.mediumDiff, desc:t.mediumDesc, emoji:'🧠', cls:'medium' },
-                            { key:'hard',   label:t.hard,       desc:t.hardDesc,   emoji:'🔥', cls:'hard'   }
-                        ].map(({key,label,desc,emoji,cls}) => (
-                            <div key={key}
-                                className={`diff-card ${cls} ${aiDiff===key?'selected':''}`}
-                                onClick={() => setAiDiff(key)}>
-                                <div className="diff-emoji">{emoji}</div>
-                                <div className="diff-name">{label}</div>
-                                <div className="diff-desc">{desc}</div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
+        // On disconnect: mark offline
+        db.ref(`rooms/${code}/players/${myId}/online`).onDisconnect().set(false);
+    }, [myId]);
 
-            <div className="setup-section">
-                <div className="section-label">{t.gridSize}</div>
-                <div className="grid-size-options">
-                    {[
-                        {rows:5,  cols:5,  label:t.small},
-                        {rows:8,  cols:8,  label:t.medium},
-                        {rows:10, cols:10, label:t.large},
-                        {rows:12, cols:12, label:t.veryLarge}
-                    ].map(size => (
-                        <button key={`${size.rows}x${size.cols}`}
-                            className={`option-button ${gridSize.rows===size.rows?'selected':''}`}
-                            onClick={() => setGridSize({rows:size.rows, cols:size.cols})}>
-                            {size.rows}×{size.cols} ({size.label})
-                        </button>
-                    ))}
-                </div>
-            </div>
+    const detachListeners = useCallback(() => {
+        if (roomListenerRef.current) { roomListenerRef.current.off(); roomListenerRef.current = null; }
+        if (chatListenerRef.current) { chatListenerRef.current.off(); chatListenerRef.current = null; }
+    }, []);
 
-            <div className="setup-section">
-                <div className="section-label">{t.playerColors}</div>
-                <div className="player-setup">
-                    {players.map(player => (
-                        <div key={player.id} className="player-card">
-                            <div className="player-info">
-                                <div className="player-name">
-                                    {player.isAI ? '🤖 ' : '👤 '}{player.name} {player.isAI && t.ai}
-                                </div>
-                                <div className="color-picker">
-                                    {Object.entries(COLORS).map(([name,val]) => {
-                                        const taken = players.some(p => p.id !== player.id && p.color === name);
-                                        return (
-                                            <div key={name}
-                                                className={`color-option ${player.color===name?'selected':''}`}
-                                                style={{backgroundColor:val, opacity:taken?0.25:1, cursor:taken?'not-allowed':'pointer'}}
-                                                onClick={() => !taken && updateColor(player.id, name)}
-                                            />
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
+    // Auto scroll chat
+    useEffect(() => { chatEndRef.current?.scrollIntoView({behavior:'smooth'}); }, [chatMessages]);
 
-            <button className="start-button" onClick={startGame}>{t.startGame} 🚀</button>
-        </div>
-    );
+    // ─── CREATE ROOM ──────────────────────────────────────────────────────────
+    const createRoom = async () => {
+        if (!myName.trim()) { showNotif(t.needName, 'error'); return; }
+        setIsLoading(true);
+        try {
+            const code = genRoomCode();
+            const hostPlayer = { id:myId, name:myName.trim(), color:myColor, isHost:true, online:true, score:0, idx:0 };
+            const roomData = {
+                code, createdAt:Date.now(), hostId:myId,
+                gameStarted:false, gameFinished:false,
+                gridRows:8, gridCols:8,
+                currentPlayerIdx:0, currentPlayerId:myId,
+                players:{ [myId]: hostPlayer }
+            };
+            await db.ref(`rooms/${code}`).set(roomData);
+            setRoom(roomData);
+            attachRoomListener(code);
+            setOnlineMode('room');
+            showNotif(`Salle créée : ${code}`, 'success');
+        } catch(e) {
+            showNotif('Erreur création salle', 'error');
+            console.error(e);
+        }
+        setIsLoading(false);
+    };
 
-    // ── RENDER: Board ─────────────────────────────────────────────────────────
-    const renderBoard = () => {
-        const cellSize = Math.min(52, Math.max(28, Math.floor((Math.min(window.innerWidth, 800) - 80) / (gridSize.cols + 1))));
-        const dotR = Math.max(5, Math.floor(cellSize * 0.16));
-        const w = (gridSize.cols + 1) * cellSize;
-        const h = (gridSize.rows + 1) * cellSize;
+    // ─── JOIN ROOM ────────────────────────────────────────────────────────────
+    const joinRoom = async () => {
+        if (!myName.trim()) { showNotif(t.needName, 'error'); return; }
+        const code = joinCode.trim().toUpperCase();
+        if (code.length !== 6) { showNotif(t.codeInvalid, 'error'); return; }
+        setIsLoading(true);
+        try {
+            const snap = await db.ref(`rooms/${code}`).get();
+            if (!snap.exists()) { showNotif(t.roomNotFound, 'error'); setIsLoading(false); return; }
+            const data = snap.val();
+            const existing = Object.values(data.players || {});
+            if (existing.length >= 4) { showNotif(t.roomFull, 'error'); setIsLoading(false); return; }
+            if (data.gameStarted) { showNotif(t.gameAlreadyStarted, 'error'); setIsLoading(false); return; }
+            const usedColors = existing.map(p=>p.color);
+            const freeColor  = COLOR_KEYS.find(c=>!usedColors.includes(c)) || myColor;
+            const mePlayer = { id:myId, name:myName.trim(), color:freeColor, isHost:false, online:true, score:0, idx:existing.length };
+            await db.ref(`rooms/${code}/players/${myId}`).set(mePlayer);
+            await db.ref(`rooms/${code}/chat`).push({ sender:'', text:`${myName.trim()} a rejoint la salle`, ts:Date.now(), type:'system' });
+            setMyColor(freeColor);
+            attachRoomListener(code);
+            setOnlineMode('room');
+        } catch(e) {
+            showNotif('Erreur connexion salle', 'error');
+            console.error(e);
+        }
+        setIsLoading(false);
+    };
 
+    // ─── LEAVE ROOM ───────────────────────────────────────────────────────────
+    const leaveRoom = async () => {
+        if (room) {
+            try {
+                await db.ref(`rooms/${room.code}/players/${myId}/online`).set(false);
+                await db.ref(`rooms/${room.code}/chat`).push({ sender:'', text:`${myName} a quitté la salle`, ts:Date.now(), type:'system' });
+                // If host, remove room after short delay
+                if (room.hostId === myId) {
+                    setTimeout(async () => {
+                        await db.ref(`rooms/${room.code}`).remove();
+                    }, 3000);
+                }
+            } catch(e) { console.error(e); }
+        }
+        detachListeners();
+        setRoom(null);
+        setOnlineMode('lobby');
+        setChatMessages([]);
+    };
+
+    // ─── START ONLINE GAME ────────────────────────────────────────────────────
+    const startOnlineGame = async () => {
+        if (!room) return;
+        const playerList = Object.values(room.players||{}).filter(p=>p.online);
+        if (playerList.length < 2) { showNotif(t.need2players, 'error'); return; }
+        try {
+            // Reset scores
+            const updates = {};
+            playerList.forEach(p => { updates[`players/${p.id}/score`] = 0; });
+            updates.gameStarted = true;
+            updates.gameFinished = false;
+            updates.currentPlayerIdx = 0;
+            updates.currentPlayerId = playerList.sort((a,b)=>a.idx-b.idx)[0].id;
+            // Clear dots/squares
+            updates.dots = null;
+            updates.squares = null;
+            await db.ref(`rooms/${room.code}`).update(updates);
+            await db.ref(`rooms/${room.code}/chat`).push({ sender:'', text:'La partie commence !', ts:Date.now(), type:'system' });
+        } catch(e) {
+            showNotif('Erreur démarrage', 'error');
+            console.error(e);
+        }
+    };
+
+    // ─── ONLINE DOT CLICK ─────────────────────────────────────────────────────
+    const onlineDotClick = async (row, col) => {
+        if (!room || !db) return;
+        const r = room;
+        const playerList = Object.values(r.players||{}).filter(p=>p.online).sort((a,b)=>a.idx-b.idx);
+        if (!playerList.length) return;
+        const curPlayer = playerList[r.currentPlayerIdx % playerList.length];
+        if (!curPlayer || curPlayer.id !== myId) return;
+        const dotsData = r.dots || {};
+        if (dotsData[`${row}-${col}`]) return;
+
+        const newDots = {...dotsData, [`${row}-${col}`]:curPlayer.color};
+        const existingSq = r.squares ? Object.values(r.squares) : [];
+        const formed = detectSquares(newDots, r.gridRows||8, r.gridCols||8, existingSq);
+        const mine   = formed.filter(s=>s.color===curPlayer.color);
+
+        let newSquares = existingSq;
+        let nextIdx = (r.currentPlayerIdx + 1) % playerList.length;
+        let newScore = curPlayer.score || 0;
+
+        if (mine.length > 0) {
+            const base = existingSq.filter(s=>s.color===curPlayer.color).length;
+            const numbered = mine.map((sq,i)=>({...sq, number:base+i+1}));
+            newSquares = [...existingSq, ...numbered];
+            newScore += mine.length;
+            nextIdx = r.currentPlayerIdx % playerList.length; // replay on score
+        }
+
+        const total = (r.gridRows+1)*(r.gridCols+1);
+        const done  = Object.keys(newDots).length >= total;
+
+        try {
+            const updates = {
+                dots: newDots,
+                squares: newSquares,
+                currentPlayerIdx: nextIdx,
+                currentPlayerId: playerList[nextIdx % playerList.length].id,
+                gameFinished: done,
+                [`players/${myId}/score`]: newScore
+            };
+            await db.ref(`rooms/${r.code}`).update(updates);
+            if (done) {
+                await db.ref(`rooms/${r.code}/chat`).push({ sender:'', text:'Partie terminée !', ts:Date.now(), type:'system' });
+            }
+        } catch(e) {
+            console.error('Move error:', e);
+        }
+    };
+
+    // ─── CHAT ─────────────────────────────────────────────────────────────────
+    const sendChatMsg = async () => {
+        if (!chatInput.trim() || !room || !db) return;
+        const msg = { sender:myName.trim(), text:chatInput.trim(), ts:Date.now(), type:'user' };
+        setChatInput('');
+        try { await db.ref(`rooms/${room.code}/chat`).push(msg); }
+        catch(e) { console.error(e); }
+    };
+
+    const copyRoomCode = () => {
+        if (room) {
+            navigator.clipboard?.writeText(room.code).catch(()=>{});
+            showNotif(t.codeCopied, 'success', 2000);
+        }
+    };
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // RENDER BOARD
+    // ═══════════════════════════════════════════════════════════════════════════
+    const renderBoard = (dotsData, squaresData, rows, cols, onClickFn) => {
+        const cellSize = Math.min(52, Math.max(24, Math.floor((Math.min(window.innerWidth*0.75, 700)-60)/(cols+1))));
+        const dotR = Math.max(4, Math.floor(cellSize*0.16));
+        const w=(cols+1)*cellSize, h=(rows+1)*cellSize;
+        const sqArr = squaresData ? (Array.isArray(squaresData) ? squaresData : Object.values(squaresData)) : [];
         return (
-            <svg className="board-svg" width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{touchAction:'none'}}>
-                {Array.from({length:gridSize.rows},(_,r) =>
-                    Array.from({length:gridSize.cols},(_,c) => (
-                        <rect key={`g${r}-${c}`}
-                            x={c*cellSize} y={r*cellSize} width={cellSize} height={cellSize}
-                            fill="none" stroke="#E8E8E8" strokeWidth="1" strokeDasharray="3,3"/>
-                    ))
-                )}
-
-                {squares.map((sq,i) => (
-                    <g key={`sq${i}`} style={{animation:'squareAppear 0.4s ease-out'}}>
-                        <rect x={sq.col*cellSize+2} y={sq.row*cellSize+2}
-                            width={cellSize-4} height={cellSize-4} rx="4"
-                            fill={COLORS[sq.color]} fillOpacity="0.45"
-                            stroke={COLORS[sq.color]} strokeWidth="2.5"/>
+            <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{display:'block',maxWidth:'100%',touchAction:'none'}}>
+                {Array.from({length:rows},(_,r)=>Array.from({length:cols},(_,c)=>(
+                    <rect key={`g${r}-${c}`} x={c*cellSize} y={r*cellSize} width={cellSize} height={cellSize} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="1"/>
+                )))}
+                {sqArr.map((sq,i)=>(
+                    <g key={`sq${i}`}>
+                        <rect x={sq.col*cellSize+2} y={sq.row*cellSize+2} width={cellSize-4} height={cellSize-4} rx="4"
+                            fill={COLORS[sq.color]} fillOpacity="0.4" stroke={COLORS[sq.color]} strokeWidth="2.5"/>
                         <text x={sq.col*cellSize+cellSize/2} y={sq.row*cellSize+cellSize/2}
                             textAnchor="middle" dominantBaseline="middle"
-                            fontSize={Math.max(10,cellSize*0.35)} fontFamily="DM Mono, monospace"
+                            fontSize={Math.max(9,cellSize*0.34)} fontFamily="DM Mono,monospace"
                             fontWeight="700" fill={COLORS[sq.color]} fillOpacity="0.9" pointerEvents="none">
                             {sq.number}
                         </text>
                     </g>
                 ))}
-
-                {Array.from({length:gridSize.rows+1},(_,r) =>
-                    Array.from({length:gridSize.cols+1},(_,c) => {
-                        const key = `${r}-${c}`;
-                        const placed = dots[key];
-                        return (
-                            <g key={`d${r}-${c}`}
-                                className={placed?'':'dot-interactive'}
-                                onClick={() => !placed && handleDotClick(r,c)}
-                                style={{cursor:placed?'default':(aiThinking||(players[curIdx]&&players[curIdx].isAI))?'wait':'pointer'}}>
-                                {!placed && <circle cx={c*cellSize} cy={r*cellSize} r={dotR+6} fill="transparent"/>}
-                                <circle cx={c*cellSize} cy={r*cellSize}
-                                    r={placed?dotR+1:dotR-1}
-                                    fill={placed?COLORS[placed]:'#CCC'}
-                                    stroke={placed?'white':'none'} strokeWidth={placed?2:0}/>
-                            </g>
-                        );
-                    })
-                )}
+                {Array.from({length:rows+1},(_,r)=>Array.from({length:cols+1},(_,c)=>{
+                    const key=`${r}-${c}`;
+                    const placed=(dotsData||{})[key];
+                    return(
+                        <g key={`d${r}-${c}`} onClick={()=>!placed&&onClickFn(r,c)} style={{cursor:placed?'default':'pointer'}}>
+                            {!placed&&<circle cx={c*cellSize} cy={r*cellSize} r={dotR+6} fill="transparent"/>}
+                            <circle cx={c*cellSize} cy={r*cellSize} r={placed?dotR+1:dotR-1}
+                                fill={placed?COLORS[placed]:'rgba(255,255,255,0.15)'}
+                                stroke={placed?'white':'none'} strokeWidth={placed?2:0}/>
+                        </g>
+                    );
+                }))}
             </svg>
         );
     };
 
-    // ── RENDER: Game ──────────────────────────────────────────────────────────
-    const renderGame = () => {
-        const cur = players[curIdx];
-        return (
-            <div className="game-screen">
-                <div className="game-header">
-                    <div style={{display:'flex',flexDirection:'column',gap:'0.3rem'}}>
-                        <div className="current-player">
-                            <div className="player-indicator" style={{backgroundColor:cur?COLORS[cur.color]:'#999'}}/>
-                            <span>{t.turnOf} {cur?cur.name:''} {cur&&cur.isAI&&t.ai}</span>
-                        </div>
-                        {aiThinking && (
-                            <div className="ai-thinking">
-                                {t.aiThinking}
-                                <span className="thinking-dots">
-                                    <span>●</span><span>●</span><span>●</span>
-                                </span>
-                            </div>
-                        )}
-                    </div>
-                    <div className="game-controls">
-                        <button className="control-button new-game" onClick={newGame}>{t.newGame}</button>
-                        <button className="control-button forfeit"  onClick={forfeit}>{t.forfeit}</button>
+    // ═══════════════════════════════════════════════════════════════════════════
+    // RENDER SETUP
+    // ═══════════════════════════════════════════════════════════════════════════
+    const renderSetup = () => (
+        <div className="setup-grid">
+            <div className="card">
+                <div className="card-title">{t.localSetup}</div>
+                <div style={{marginBottom:'1.2rem'}}>
+                    <div className="section-label">{t.numPlayers}</div>
+                    <div className="btn-group">
+                        {[2,3,4].map(n=>(
+                            <button key={n} className={`opt-btn ${numPlayers===n?'selected':''}`} onClick={()=>setNumPlayers(n)}>
+                                {n} {n>1?t.players:t.player}
+                            </button>
+                        ))}
                     </div>
                 </div>
-
-                <div className="game-content">
-                    <div className="board-container">
-                        <div className="game-board">{renderBoard()}</div>
+                <div style={{marginBottom:'1.2rem'}}>
+                    <div className="section-label">{t.gameMode}</div>
+                    <div className="btn-group">
+                        <button className={`opt-btn ${!vsAI?'selected':''}`} onClick={()=>setVsAI(false)}>👥 {t.playersOnly}</button>
+                        <button className={`opt-btn ${vsAI?'selected':''}`}   onClick={()=>setVsAI(true)}>🤖 {t.vsAI}</button>
                     </div>
-                    <div className="scoreboard">
-                        <div className="scoreboard-title">{t.scoreboard}</div>
-                        <div className="score-list">
-                            {players.map((p,i) => (
-                                <div key={p.id} className={`score-item ${i===curIdx?'active':''}`}>
-                                    <div className="score-player">
-                                        <div className="score-color" style={{backgroundColor:COLORS[p.color]}}/>
-                                        <span className="score-name">{p.isAI?'🤖 ':''}{p.name}</span>
-                                    </div>
-                                    <div className="score-value">{p.score}</div>
+                </div>
+                {vsAI&&(
+                    <div style={{marginBottom:'1.2rem'}}>
+                        <div className="section-label">{t.aiDiff}</div>
+                        <div className="diff-row">
+                            {[{k:'easy',e:'😊',n:t.easy,d:t.easyDesc,c:'easy'},{k:'medium',e:'🧠',n:t.mediumD,d:t.mediumDesc,c:'medium'},{k:'hard',e:'🔥',n:t.hard,d:t.hardDesc,c:'hard'}].map(({k,e,n,d,c})=>(
+                                <div key={k} className={`diff-card ${c} ${aiDiff===k?'selected':''}`} onClick={()=>setAiDiff(k)}>
+                                    <div className="emoji">{e}</div><div className="name">{n}</div><div className="desc">{d}</div>
                                 </div>
                             ))}
                         </div>
-                        {vsAI && (
-                            <div style={{marginTop:'1rem',textAlign:'center'}}>
-                                <span className={`difficulty-badge difficulty-${aiDiff}`}>
-                                    {aiDiff==='easy'?'😊 ':aiDiff==='medium'?'🧠 ':'🔥 '}
-                                    {aiDiff==='easy'?t.easy:aiDiff==='medium'?t.mediumDiff:t.hard}
-                                </span>
-                            </div>
-                        )}
                     </div>
-                </div>
-            </div>
-        );
-    };
-
-    // ── RENDER: Winner ────────────────────────────────────────────────────────
-    const renderWinner = () => {
-        const sorted = [...players].sort((a,b) => b.score - a.score);
-        const best   = sorted[0];
-        const isDraw = sorted.filter(p => p.score === best.score).length > 1;
-        return (
-            <div className="winner-screen">
-                <div className="winner-content">
-                    <div className="winner-title">{isDraw ? t.draw : t.victory}</div>
-                    {!isDraw && (
-                        <div className="winner-name" style={{color:COLORS[best.color]}}>
-                            {best.isAI ? '🤖 ' : '🏆 '}{best.name}
-                        </div>
-                    )}
-                    <div className="final-scores">
-                        {sorted.map(p => (
-                            <div key={p.id} className="final-score-item">
-                                <div style={{display:'flex',alignItems:'center',gap:'0.5rem'}}>
-                                    <div style={{width:16,height:16,borderRadius:'50%',backgroundColor:COLORS[p.color]}}/>
-                                    <span>{p.isAI?'🤖 ':''}{p.name}</span>
-                                </div>
-                                <strong>{p.score} {p.score>1?t.squares:t.square}</strong>
-                            </div>
+                )}
+                <div>
+                    <div className="section-label">{t.gridSize}</div>
+                    <div className="btn-group">
+                        {[{r:5,c:5,l:t.small},{r:8,c:8,l:t.medium},{r:10,c:10,l:t.large},{r:12,c:12,l:t.veryLarge}].map(s=>(
+                            <button key={`${s.r}x${s.c}`} className={`opt-btn ${gridSize.rows===s.r?'selected':''}`} onClick={()=>setGridSize({rows:s.r,cols:s.c})}>
+                                {s.r}×{s.c} {s.l}
+                            </button>
                         ))}
                     </div>
-                    <button className="start-button" onClick={newGame}>{t.newGame} 🔄</button>
                 </div>
             </div>
-        );
-    };
-
-    // ── RENDER: Manual ────────────────────────────────────────────────────────
-    const renderManual = () => (
-        <div className="manual-screen">
-            <h2 className="manual-title">📖 {t.manualTitle}</h2>
-            <p className="manual-subtitle">{t.manualSub}</p>
-
-            {/* Objective */}
-            <div className="manual-section">
-                <div className="manual-section-title"><span className="icon">🎯</span>{t.sec1}</div>
-                <p className="manual-p" dangerouslySetInnerHTML={{__html: t.obj1}}/>
-                <p className="manual-p" dangerouslySetInnerHTML={{__html: t.obj2}}/>
-
-                {/* Visual demo: a square */}
-                <div style={{display:'flex',alignItems:'center',gap:'1.5rem',flexWrap:'wrap',margin:'0.5rem 0 1rem'}}>
-                    <div>
-                        <svg width="100" height="100" viewBox="0 0 100 100">
-                            <rect x="5" y="5" width="90" height="90" fill="rgba(33,150,243,0.25)" stroke="#2196F3" strokeWidth="2.5" rx="6"/>
-                            {[[10,10],[10,90],[90,10],[90,90]].map(([cx,cy],i)=>
-                                <circle key={i} cx={cx} cy={cy} r="10" fill="#2196F3" stroke="white" strokeWidth="2.5"/>
-                            )}
-                            <text x="50" y="55" textAnchor="middle" fontSize="22" fontWeight="900" fill="#2196F3" fontFamily="DM Mono,monospace">1</text>
-                        </svg>
-                    </div>
-                    <div style={{color:'#555',fontSize:'0.93rem',maxWidth:'260px',lineHeight:'1.6'}}>
-                        {lang==='fr'
-                            ? '← 4 points bleus aux 4 coins = un carré bleu marqué !'
-                            : '← 4 blue dots at all 4 corners = one scored blue square!'}
-                    </div>
-                </div>
-            </div>
-
-            {/* How to play */}
-            <div className="manual-section">
-                <div className="manual-section-title"><span className="icon">🕹️</span>{t.sec2}</div>
-                <ol className="manual-ol">
-                    <li dangerouslySetInnerHTML={{__html: t.how1}}/>
-                    <li dangerouslySetInnerHTML={{__html: t.how2}}/>
-                    <li dangerouslySetInnerHTML={{__html: t.how3}}/>
-                    <li dangerouslySetInnerHTML={{__html: t.how4}}/>
-                    <li dangerouslySetInnerHTML={{__html: t.how5}}/>
-                </ol>
-            </div>
-
-            {/* Rules */}
-            <div className="manual-section">
-                <div className="manual-section-title"><span className="icon">📋</span>{t.sec3}</div>
-                {[t.rule1, t.rule2, t.rule3, t.rule4].map((r,i) => (
-                    <p key={i} className="manual-p" style={{paddingLeft:'0.5rem',borderLeft:'3px solid #eee',marginBottom:'0.6rem'}}
-                        dangerouslySetInnerHTML={{__html:'• '+r}}/>
-                ))}
-            </div>
-
-            {/* Strategies */}
-            <div className="manual-section">
-                <div className="manual-section-title"><span className="icon">♟️</span>{t.sec4}</div>
-                {[
-                    {title:t.tip1t, body:t.tip1},
-                    {title:t.tip2t, body:t.tip2},
-                    {title:t.tip3t, body:t.tip3},
-                    {title:t.tip4t, body:t.tip4},
-                    {title:t.tip5t, body:t.tip5},
-                ].map((tip,i) => (
-                    <div key={i} className="tip-card">
-                        <strong>💡 {tip.title}</strong>
-                        <p>{tip.body}</p>
+            <div className="card">
+                <div className="card-title">{t.colors}</div>
+                {players.map(player=>(
+                    <div key={player.id} className="player-row">
+                        <div className="player-dot" style={{backgroundColor:COLORS[player.color]}}/>
+                        <div className="player-row-info">
+                            <div className="player-row-name">{player.isAI?'🤖 ':''}{player.name} {player.isAI&&<span style={{color:'var(--muted)',fontSize:'0.8rem'}}>{t.ai}</span>}</div>
+                            <div className="color-picker" style={{marginTop:'0.5rem'}}>
+                                {Object.entries(COLORS).map(([name,val])=>{
+                                    const taken=players.some(p=>p.id!==player.id&&p.color===name);
+                                    return(<div key={name} className={`color-dot ${player.color===name?'selected':''} ${taken?'taken':''}`} style={{backgroundColor:val}} onClick={()=>!taken&&updateColor(player.id,name)}/>);
+                                })}
+                            </div>
+                        </div>
                     </div>
                 ))}
+                <button className="primary-btn" onClick={startLocal}>{t.start}</button>
             </div>
-
-            {/* AI levels */}
-            <div className="manual-section">
-                <div className="manual-section-title"><span className="icon">🤖</span>{t.sec5}</div>
-                <div className="diff-row">
-                    <div className="diff-pill easy">
-                        <div className="diff-pill-title">😊 {t.diff_easy_t}</div>
-                        <p>{t.diff_easy}</p>
-                    </div>
-                    <div className="diff-pill medium">
-                        <div className="diff-pill-title">🧠 {t.diff_med_t}</div>
-                        <p>{t.diff_med}</p>
-                    </div>
-                    <div className="diff-pill hard">
-                        <div className="diff-pill-title">🔥 {t.diff_hard_t}</div>
-                        <p>{t.diff_hard}</p>
-                    </div>
-                </div>
-            </div>
-
-            <button className="start-button" onClick={() => setTab('game')}>
-                {lang==='fr'?'🎮 Jouer maintenant':'🎮 Play now'}
-            </button>
         </div>
     );
 
-    return (
-        <div className="app-container">
-            <div className="language-toggle">
-                <button className={`lang-button ${lang==='fr'?'active':''}`} onClick={() => setLang('fr')}>FR</button>
-                <button className={`lang-button ${lang==='en'?'active':''}`} onClick={() => setLang('en')}>EN</button>
+    // ═══════════════════════════════════════════════════════════════════════════
+    // RENDER LOCAL GAME
+    // ═══════════════════════════════════════════════════════════════════════════
+    const renderLocalGame = () => {
+        const cur = players[curIdx];
+        return(
+            <div className="game-screen">
+                <div className="game-topbar">
+                    <div className="turn-info">
+                        <div className="turn-dot" style={{backgroundColor:cur?COLORS[cur.color]:'#999'}}/>
+                        <div>
+                            <div className="turn-name">{t.turnOf} {cur?.name} {cur?.isAI&&t.ai}</div>
+                            {aiThinking&&<div style={{fontSize:'0.8rem',color:'var(--muted)'}}>Réfléchit <span className="thinking-dot">●</span><span className="thinking-dot">●</span><span className="thinking-dot">●</span></div>}
+                        </div>
+                    </div>
+                    <div className="ctrl-btns">
+                        <button className="ctrl-btn green" onClick={newLocalGame}>{t.newGame}</button>
+                        <button className="ctrl-btn red" onClick={()=>setGameState('finished')}>{t.forfeit}</button>
+                    </div>
+                </div>
+                <div className="game-layout">
+                    <div className="board-wrap">{renderBoard(dots,squares,gridSize.rows,gridSize.cols,handleDotClick)}</div>
+                    <div className="sidebar">
+                        <div className="scoreboard-card">
+                            <div className="score-title">{t.scoreboard}</div>
+                            {players.map((p,i)=>(
+                                <div key={p.id} className={`score-item ${i===curIdx?'active':''}`}>
+                                    <div className="score-left">
+                                        <div className="score-dot" style={{backgroundColor:COLORS[p.color]}}/>
+                                        <span className="score-name">{p.isAI?'🤖 ':''}{p.name}</span>
+                                    </div>
+                                    <div className="score-val">{p.score}</div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div className="header">
-                <h1 className="logo">{t.title}</h1>
-                <p className="tagline">{t.tagline}</p>
-                <div className="top-tabs">
-                    <button className={`top-tab ${tab==='game'?'active':''}`} onClick={() => setTab('game')}>{t.tabGame}</button>
-                    <button className={`top-tab ${tab==='manual'?'active':''}`} onClick={() => setTab('manual')}>{t.tabManual}</button>
+        );
+    };
+
+    const renderLocalWinner = () => {
+        const sorted=[...players].sort((a,b)=>b.score-a.score);
+        const best=sorted[0];
+        const isDraw=sorted.filter(p=>p.score===best.score).length>1;
+        return(
+            <div className="winner-overlay">
+                <div className="winner-box">
+                    <div className="winner-emoji">{isDraw?'🤝':'🏆'}</div>
+                    <div className="winner-title">{isDraw?t.draw:t.victory}</div>
+                    {!isDraw&&<div className="winner-name" style={{color:COLORS[best.color]}}>{best.isAI?'🤖 ':''}{best.name}</div>}
+                    <div className="final-list">
+                        {sorted.map(p=>(
+                            <div key={p.id} className="final-row">
+                                <div className="fr-name"><div style={{width:14,height:14,borderRadius:'50%',backgroundColor:COLORS[p.color]}}/>{p.isAI?'🤖 ':''}{p.name}</div>
+                                <div className="fr-score">{p.score} {p.score>1?t.squares:t.square}</div>
+                            </div>
+                        ))}
+                    </div>
+                    <button className="primary-btn" onClick={newLocalGame}>{t.newGame} 🔄</button>
+                </div>
+            </div>
+        );
+    };
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // ONLINE SCREENS
+    // ═══════════════════════════════════════════════════════════════════════════
+    const renderOnlineLobby = () => (
+        <div className="online-section">
+            <div className={`fb-status-bar ${firebaseReady?'connected':'disconnected'}`}>
+                {firebaseReady ? t.fbConnected : t.fbDisconnected}
+            </div>
+
+            <div className="card" style={{marginBottom:'1.5rem'}}>
+                <div style={{display:'flex',flexWrap:'wrap',gap:'1.2rem',alignItems:'flex-end'}}>
+                    <div style={{flex:1,minWidth:200}}>
+                        <div className="section-label">{t.yourName}</div>
+                        <input className="join-input" style={{width:'100%',letterSpacing:'0.02em',textAlign:'left',fontSize:'1rem'}}
+                            placeholder={t.name} value={myName} onChange={e=>setMyName(e.target.value)}
+                            onKeyDown={e=>e.key==='Enter'&&createRoom()}/>
+                    </div>
+                    <div>
+                        <div className="section-label">{t.colors}</div>
+                        <div className="color-picker">
+                            {Object.entries(COLORS).map(([n,v])=>(
+                                <div key={n} className={`color-dot ${myColor===n?'selected':''}`} style={{backgroundColor:v}} onClick={()=>setMyColor(n)}/>
+                            ))}
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            {tab === 'manual' && renderManual()}
+            <div className="lobby-actions">
+                <div className="action-card" onClick={isLoading?null:createRoom}>
+                    <div className="ac-icon">{isLoading?<div className="spinner" style={{margin:'0 auto'}}/>:'🏠'}</div>
+                    <div className="ac-title">{t.createRoom}</div>
+                    <div className="ac-desc">{t.createDesc}</div>
+                </div>
+                <div className="card" style={{display:'flex',flexDirection:'column',gap:'0.5rem'}}>
+                    <div className="ac-icon" style={{fontSize:'2.5rem',textAlign:'center'}}>🚪</div>
+                    <div className="ac-title" style={{textAlign:'center'}}>{t.joinRoom}</div>
+                    <div className="ac-desc" style={{textAlign:'center'}}>{t.joinDesc}</div>
+                    <div className="join-row">
+                        <input className="join-input" placeholder={t.enterCode} value={joinCode}
+                            onChange={e=>setJoinCode(e.target.value.toUpperCase().slice(0,6))}
+                            onKeyDown={e=>e.key==='Enter'&&joinRoom()}/>
+                        <button className="primary-btn" style={{width:'auto',padding:'0.7rem 1.2rem',margin:0}} onClick={isLoading?null:joinRoom}>
+                            {isLoading?<div className="spinner"/>:t.joinBtn}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
 
-            {tab === 'game' && gameState === 'setup'    && renderSetup()}
-            {tab === 'game' && gameState === 'playing'  && renderGame()}
-            {tab === 'game' && gameState === 'finished' && renderWinner()}
+    const renderOnlineRoom = () => {
+        if (!room) return null;
+        const playerList = Object.values(room.players||{}).sort((a,b)=>a.idx-b.idx);
+        const onlinePlayers = playerList.filter(p=>p.online);
+        const emptySlots = 4 - playerList.length;
+        const isHost = room.hostId === myId;
+
+        return(
+            <div className="online-section">
+                <div className="card">
+                    <div className="room-header">
+                        <div>
+                            <div style={{fontSize:'0.8rem',color:'var(--muted)',marginBottom:'0.3rem'}}>{t.roomCode}</div>
+                            <div className="room-code-badge">{room.code}</div>
+                        </div>
+                        <div className={`room-status-badge ${room.gameStarted?'status-playing':'status-waiting'}`}>
+                            {room.gameStarted?t.playing:t.waiting}
+                        </div>
+                        <button className="ctrl-btn blue" onClick={copyRoomCode}>📋 {t.copyCode}</button>
+                        <div style={{marginLeft:'auto'}}>
+                            <button className="ctrl-btn red" onClick={leaveRoom}>{t.leaveRoom}</button>
+                        </div>
+                    </div>
+
+                    <div className="section-label" style={{marginBottom:'0.8rem'}}>{t.players_in_room} ({onlinePlayers.length}/4)</div>
+                    <div className="room-players">
+                        {playerList.map(p=>(
+                            <div key={p.id} className={`room-player-card ${p.id===myId?'me':''} ${p.isHost?'host-card':''}`}>
+                                <div className="room-player-avatar" style={{backgroundColor:COLORS[p.color]||'#444'}}>
+                                    {p.online?'👤':'💤'}
+                                </div>
+                                <div>
+                                    <div className="room-player-name">
+                                        {p.name}
+                                        <span className={p.online?'online-badge':'offline-badge'}/>
+                                    </div>
+                                    <div className="room-player-badge">
+                                        {p.isHost?`👑 ${t.host}`:''}
+                                        {p.id===myId?` · ${t.youLabel}`:''}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                        {Array.from({length:emptySlots},(_,i)=>(
+                            <div key={`empty${i}`} className="room-player-card empty-slot">
+                                <div className="room-player-avatar">＋</div>
+                                <div className="room-player-badge">{t.slot}</div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="section-label" style={{marginBottom:'0.5rem'}}>{t.chat}</div>
+                    <div className="chat-box">
+                        <div className="chat-messages">
+                            {chatMessages.map((m,i)=>(
+                                <div key={i} className={`chat-msg ${m.type==='system'?'system':''}`}>
+                                    {m.type!=='system'&&<span className="sender" style={{color:COLORS[playerList.find(p=>p.name===m.sender)?.color]||'var(--c1)'}}>{m.sender}: </span>}
+                                    {m.text}
+                                </div>
+                            ))}
+                            <div ref={chatEndRef}/>
+                        </div>
+                        <div className="chat-input-row">
+                            <input className="chat-input" placeholder={t.chatPlaceholder} value={chatInput}
+                                onChange={e=>setChatInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&sendChatMsg()}/>
+                            <button className="chat-send" onClick={sendChatMsg}>↑</button>
+                        </div>
+                    </div>
+
+                    {isHost && !room.gameStarted && onlinePlayers.length >= 2 && (
+                        <button className="primary-btn" onClick={startOnlineGame}>{t.startOnline}</button>
+                    )}
+                    {isHost && !room.gameStarted && onlinePlayers.length < 2 && (
+                        <div style={{textAlign:'center',color:'var(--muted)',padding:'1rem',fontSize:'0.9rem'}}>{t.waitingFor}</div>
+                    )}
+                    {!isHost && !room.gameStarted && (
+                        <div style={{textAlign:'center',color:'var(--muted)',padding:'1rem',fontSize:'0.9rem'}}>{t.waitingFor}</div>
+                    )}
+                </div>
+            </div>
+        );
+    };
+
+    const renderOnlineGame = () => {
+        if (!room) return null;
+        const r = room;
+        const playerList = Object.values(r.players||{}).filter(p=>p.online).sort((a,b)=>a.idx-b.idx);
+        if (!playerList.length) return null;
+        const curPlayer = playerList[r.currentPlayerIdx % playerList.length];
+        const isMyTurn  = curPlayer?.id === myId;
+        const dotsData  = r.dots || {};
+        const squaresData = r.squares ? (Array.isArray(r.squares) ? r.squares : Object.values(r.squares)) : [];
+
+        if (r.gameFinished) {
+            const sorted=[...playerList].sort((a,b)=>(b.score||0)-(a.score||0));
+            const best=sorted[0];
+            const isDraw=sorted.filter(p=>(p.score||0)===(best.score||0)).length>1;
+            return(
+                <div className="winner-overlay">
+                    <div className="winner-box">
+                        <div className="winner-emoji">{isDraw?'🤝':'🏆'}</div>
+                        <div className="winner-title">{isDraw?t.draw:t.victory}</div>
+                        {!isDraw&&<div className="winner-name" style={{color:COLORS[best.color]}}>{best.name}</div>}
+                        <div className="final-list">
+                            {sorted.map(p=>(
+                                <div key={p.id} className="final-row">
+                                    <div className="fr-name"><div style={{width:14,height:14,borderRadius:'50%',backgroundColor:COLORS[p.color]}}/>{p.name}{p.id===myId?` (${t.youLabel})`:''}</div>
+                                    <div className="fr-score">{p.score||0} {(p.score||0)>1?t.squares:t.square}</div>
+                                </div>
+                            ))}
+                        </div>
+                        <button className="primary-btn" onClick={()=>{ setOnlineMode('room'); }}>
+                            {t.backLobby}
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
+        return(
+            <div className="game-screen">
+                <div className="game-topbar">
+                    <div className="turn-info">
+                        <div className="turn-dot" style={{backgroundColor:curPlayer?COLORS[curPlayer.color]:'#999'}}/>
+                        <div>
+                            <div className="turn-name">{t.turnOf} {curPlayer?.name}</div>
+                            {isMyTurn
+                                ? <span className="turn-you">⚡ {t.yourTurn}</span>
+                                : <span style={{fontSize:'0.8rem',color:'var(--muted)'}}>{t.waiting_turn}</span>
+                            }
+                        </div>
+                    </div>
+                    <div className="ctrl-btns">
+                        <button className="ctrl-btn blue" onClick={()=>setOnlineMode('room')}>{t.backLobby}</button>
+                    </div>
+                </div>
+                <div className="game-layout">
+                    <div className="board-wrap" style={{cursor:isMyTurn?'pointer':'not-allowed'}}>
+                        {renderBoard(dotsData, squaresData, r.gridRows||8, r.gridCols||8, isMyTurn ? onlineDotClick : ()=>{})}
+                    </div>
+                    <div className="sidebar">
+                        <div className="scoreboard-card">
+                            <div className="score-title">{t.scoreboard}</div>
+                            {playerList.map(p=>(
+                                <div key={p.id} className={`score-item ${curPlayer?.id===p.id?'active':''} ${p.id===myId?'you':''}`}>
+                                    <div className="score-left">
+                                        <div className="score-dot" style={{backgroundColor:COLORS[p.color]}}/>
+                                        <span className="score-name">{p.name}{p.id===myId?` (${t.youLabel})`:''}</span>
+                                        <span className={p.online?'online-badge':'offline-badge'}/>
+                                    </div>
+                                    <div className="score-val">{p.score||0}</div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="scoreboard-card">
+                            <div className="score-title">{t.chat}</div>
+                            <div className="chat-box" style={{height:'160px'}}>
+                                <div className="chat-messages">
+                                    {chatMessages.slice(-20).map((m,i)=>(
+                                        <div key={i} className={`chat-msg ${m.type==='system'?'system':''}`}>
+                                            {m.type!=='system'&&<span className="sender">{m.sender}: </span>}
+                                            {m.text}
+                                        </div>
+                                    ))}
+                                    <div ref={chatEndRef}/>
+                                </div>
+                                <div className="chat-input-row">
+                                    <input className="chat-input" placeholder={t.chatPlaceholder} value={chatInput}
+                                        onChange={e=>setChatInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&sendChatMsg()}/>
+                                    <button className="chat-send" onClick={sendChatMsg}>↑</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    const renderManual = () => (
+        <div className="manual-wrap">
+            <div className="card">
+                <div className="card-title">📖 {t.manualTitle} <span className="tag">v2.1</span></div>
+                <p className="manual-p" style={{color:'var(--muted)'}}>{t.manualSub}</p>
+                <div className="manual-section-title">🎯 {t.sec1}</div>
+                <p className="manual-p" dangerouslySetInnerHTML={{__html:t.obj1}}/>
+                <p className="manual-p" dangerouslySetInnerHTML={{__html:t.obj2}}/>
+                <div className="manual-section-title">🕹️ {t.sec2}</div>
+                <ol className="manual-ol">
+                    {[t.how1,t.how2,t.how3,t.how4,t.how5].map((h,i)=><li key={i} dangerouslySetInnerHTML={{__html:h}}/>)}
+                </ol>
+                <div className="manual-section-title">♟️ {t.sec4}</div>
+                {[{t:t.tip1t,b:t.tip1},{t:t.tip2t,b:t.tip2},{t:t.tip3t,b:t.tip3},{t:t.tip4t,b:t.tip4}].map((tip,i)=>(
+                    <div key={i} className="tip-card"><strong>💡 {tip.t}</strong><p>{tip.b}</p></div>
+                ))}
+                <div className="manual-section-title">🤖 {t.sec5}</div>
+                <div className="diff-pills">
+                    {[{c:'easy',e:'😊',n:t.easy,d:t.diff_easy},{c:'medium',e:'🧠',n:t.mediumD,d:t.diff_med},{c:'hard',e:'🔥',n:t.hard,d:t.diff_hard}].map(x=>(
+                        <div key={x.c} className={`diff-pill-card ${x.c}`}><div className="dpt">{x.e} {x.n}</div><p>{x.d}</p></div>
+                    ))}
+                </div>
+                <div className="manual-section-title">🌐 {t.sec6}</div>
+                <ol className="manual-ol">
+                    {[t.online1,t.online2,t.online3,t.online4].map((x,i)=><li key={i}>{x}</li>)}
+                </ol>
+                <button className="primary-btn" onClick={()=>setTab('play')}>🎮 {lang==='fr'?'Jouer maintenant':'Play now'}</button>
+            </div>
+        </div>
+    );
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // MAIN RENDER
+    // ═══════════════════════════════════════════════════════════════════════════
+    return(
+        <div className="app">
+            <div className="lang-bar">
+                <button className={`lang-btn ${lang==='fr'?'active':''}`} onClick={()=>setLang('fr')}>FR</button>
+                <button className={`lang-btn ${lang==='en'?'active':''}`} onClick={()=>setLang('en')}>EN</button>
+            </div>
+            <div className="header">
+                <div className="logo">{t.title}</div>
+                <div className="logo-sub">{t.tagline}</div>
+                <div className="top-tabs">
+                    <button className={`top-tab ${tab==='play'?'active':''}`}   onClick={()=>setTab('play')}>{t.tabPlay}</button>
+                    <button className={`top-tab ${tab==='online'?'active':''}`} onClick={()=>setTab('online')}>{t.tabOnline}</button>
+                    <button className={`top-tab ${tab==='manual'?'active':''}`} onClick={()=>setTab('manual')}>{t.tabManual}</button>
+                </div>
+            </div>
+            <div className="main">
+                {tab==='play'   && gameState==='setup'    && renderSetup()}
+                {tab==='play'   && gameState==='playing'  && renderLocalGame()}
+                {tab==='play'   && gameState==='finished' && renderLocalGame()}
+                {tab==='play'   && gameState==='finished' && renderLocalWinner()}
+                {tab==='online' && onlineMode==='lobby'   && renderOnlineLobby()}
+                {tab==='online' && onlineMode==='room'    && renderOnlineRoom()}
+                {tab==='online' && onlineMode==='game'    && renderOnlineGame()}
+                {tab==='manual' && renderManual()}
+            </div>
+            {notif && <div className={`notif ${notif.type}`}>{notif.msg}</div>}
         </div>
     );
 };
 
-ReactDOM.render(<SquareGame />, document.getElementById('root'));
+ReactDOM.render(<App/>, document.getElementById('root'));
 </script>
 
 <script>
-document.addEventListener('touchstart', function(e){ if(e.touches.length>1)e.preventDefault(); }, {passive:false});
-let lastTap=0;
-document.addEventListener('touchend', function(e){ const now=Date.now(); if(now-lastTap<300)e.preventDefault(); lastTap=now; }, {passive:false});
-document.addEventListener('wheel', function(e){ if(e.ctrlKey)e.preventDefault(); }, {passive:false});
-document.addEventListener('keydown', function(e){ if((e.ctrlKey||e.metaKey)&&(e.key==='+'||e.key==='-'||e.key==='='))e.preventDefault(); });
+document.addEventListener('touchstart',e=>{if(e.touches.length>1)e.preventDefault();},{passive:false});
+let lt=0;
+document.addEventListener('touchend',e=>{const n=Date.now();if(n-lt<300)e.preventDefault();lt=n;},{passive:false});
+document.addEventListener('wheel',e=>{if(e.ctrlKey)e.preventDefault();},{passive:false});
 </script>
 </body>
 </html>
